@@ -46,6 +46,11 @@ public:
 
     static Key generate(size_t bitSize)
     {
+
+        // CHECK MEMES PLS
+        // https://vk.com/wall-207856611_49
+        // =) =) =)
+
         if (bitSize % 8 != 0)
         {
             throw std::invalid_argument("Bad key size");
