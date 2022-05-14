@@ -47,6 +47,7 @@
 Кодирование:  
  - `static std::string b64Encode(const std::vector<uint8_t> &data);`
  - [Дописать перегрузку]
+
 Декодирование:  
  - `static std::vector<uint8_t> b64Decode(const std::string &data);`
 Для `MyCryptoLib::Base64` - методы аналогичны, но с префиксом `b32` вместо `b64`.  
@@ -62,6 +63,7 @@ BASED ON `IHash` Abstract Class
 Вычисление дайджеста:  
  - `void update(const std::vector<uint8_t>&) override;` + 2 overloads - Update digest
  - `OvErLoAd`
+
 Вывод:  
  - `std::string hexDigest();` (from IHash) - gets digest
  - `mOr3`
@@ -74,8 +76,10 @@ BASED ON `IHash` Abstract Class
 #### `MyCryptoLib::HMAC`
 Конструктор:  
  - `HMAC(IHash *hashAlgorythm);` - HMAC init
+
 Вычисление HMAC:
  - `void create(const std::vector<uint8_t>&, const Key&);` + 1 overload - create HMAC
+
 Вывод:  
  - `std::string hex();` - HMAC output
  - MoR3
