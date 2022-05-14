@@ -1,13 +1,13 @@
 # Cryptolabs 10.05.01
 ## D35YNC 2022
 
-## Лабки
+## Готово
 - [X] `/lab2` - Base64/32
-- [ ] `/lab3` - RSA + PKCS7,8,12
+- [ ] `/lab3` - RSA + закос под PKCS7,8,12
 - [X] `/lab4` - STREEBOG (ГОСТ 34.11-2012)
-- [ ] `/lab5` - SHA256/512 
-- [ ] `/lab6` - HMAC
-- [ ] `/lab7` - RSA sign + PKCS7 Packing
+- [X] `/lab5` - SHA256/512 
+- [X] `/lab6` - HMAC
+- [ ] `/lab7` - RSA sign + закос под PKCS7
 - [ ] `/lab8` - ElGamal
 - [ ] `/lab9` - Цифровая подпись Фиата-Шамира
 - [ ] `/lab10` - Групповая цифровая подпись CAdES
