@@ -20,8 +20,8 @@ public:
 
         // Работаем с блоками по 5 байт = 40 бит
         uint8_t block[5] = { 0x00 };
-        int blockSize = 0;
         int i = 0;
+        int blockSize = 0;
         while (i < data.size())
         {
             block[i % 5] = data[i];
@@ -102,13 +102,23 @@ public:
         std::vector<uint8_t> result;
 
         int i = 0;
+        int blockIndex = 0;
         int blockSize = 0;
         uint8_t block[8];
 
-        while (i < data.size() && data[i] != '=' && Base32::isBase32Char(data[i]))
+        while (i < data.size() && data[i] != '=')
         {
-            block[i % 8] = static_cast<uint8_t>(Base32::base32Alphabet.find(data[i]));
+            // Skip non b32 symbols
+            // TODO ADDoption
+            if (!Base32::isBase32Char(data[i]))
+            {
+                i++;
+                continue;
+            }
+
+            block[blockIndex % 8] = static_cast<uint8_t>(Base32::base32Alphabet.find(data[i]));
             i++;
+            blockIndex++;
             blockSize++;
 
             if (blockSize == 8)

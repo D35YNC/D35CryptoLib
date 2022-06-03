@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-
+#include <algorithm>
 namespace MyCryptoLib
 {
     class Base64
@@ -76,9 +76,17 @@ public:
         int blockSize = 0;
         uint32_t block[4];
 
-        while (i < data.size() && data[i] != '=' && Base64::isBase64Char(data[i]))
+        while (i < data.size() && data[i] != '=')
         {
-            block[i % 4] = static_cast<uint8_t>(Base64::base64Alphabet.find(data[i]));
+            // Skip non b64 symbols
+            // TODO: ADD option
+            if (!Base64::isBase64Char(data[i]))
+            {
+                i++;
+                continue;
+            }
+
+            block[blockSize] = static_cast<uint8_t>(Base64::base64Alphabet.find(data[i]));
             i++;
             blockSize++;
 
@@ -110,6 +118,14 @@ public:
             {
                 result.push_back(buffer >> (j * 8));
             }
+
+//            int cnt = std::count(data.begin(), data.end(), '=');
+            // Костыль мне кажется =)
+            for (int paddingCount = 0; paddingCount < std::count(data.begin(), data.end(), '='); paddingCount++)
+            {
+                result.pop_back();
+            }
+
         }
 
         return result;
