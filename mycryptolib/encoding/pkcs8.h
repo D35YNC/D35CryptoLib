@@ -1,26 +1,21 @@
 #ifndef PKCS8_H
 #define PKCS8_H
 
-#include "ipkcs.h"
+#include "pkcs_base.h"
+#include "../exceptions.h"
 
 namespace MyCryptoLib
 {
-class PKCS8 : public IPKCS
+class PKCS8 : public PKCSBase
 {
 public:
-    PKCS8(const std::string &keyAlgorithm, const std::map<int, std::vector<uint8_t>> &data);
     PKCS8(const std::string &filename);
-
-    std::vector<uint8_t> toPem()
-    {
-        return IPKCS::toPem(keyAlgorithm + keyType);
-    }
+    PKCS8(const std::string &keyAlgorithm, const std::map<int, std::vector<uint8_t>> &data);
 
 private:
-    PKCS8() : IPKCS() { }
+    PKCS8() : PKCSBase("", "") { }
 
     std::string keyAlgorithm;
-    const std::string keyType = " PUBLIC KEY";
 };
 }
 
