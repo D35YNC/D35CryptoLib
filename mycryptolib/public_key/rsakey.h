@@ -43,18 +43,16 @@ public:
         d = NTL::InvMod(e % phi, phi);
     }
 
-    RSAKey(const PKCS12 &pkcs12Obj);
-    RSAKey(const PKCS8 &pkcs8Obj);
-
     static RSAKey generate(size_t bitSize);
-    static RSAKey fromPKCS8(const PKCS8 &pkcs8obj);
-    static RSAKey fromPKCS12(const PKCS12 &pkcs12obj);
-    static RSAKey fromPKCS8File(std::string filename);
-    static RSAKey fromPKCS12File(std::string filename);
+    static RSAKey fromPKCS8(PKCS8 *pkcs8obj);
+    static RSAKey fromPKCS12(PKCS12 *pkcs12obj);
+    static RSAKey fromPKCS8File(const std::string &filename);
+    static RSAKey fromPKCS12File(const std::string &filename);
 
     bool isPrivate() const;
     bool canEncrypt() const;
     bool canDecrypt() const;
+    size_t blockSize() const;
     size_t size() const;
 
     PKCS12 exportPrivateKey();

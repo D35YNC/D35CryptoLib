@@ -5,7 +5,6 @@
 
 #include "rsakey.h"
 
-#include "../hash/ihash.h"
 #include "../exceptions.h"
 #include "../encoding/pkcs7.h"
 
@@ -29,6 +28,7 @@ public:
 private:
     void crypt(std::vector<uint8_t> &data, const NTL::ZZ &power, const NTL::ZZ &n);
     void pad(std::vector<uint8_t> &data, size_t blockSize);
+    void unpad(std::vector<uint8_t> &data);
 };
 }
 
