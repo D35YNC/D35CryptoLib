@@ -3,14 +3,14 @@
 
 #include <algorithm>
 
-#include "ihash.h"
+#include "hash_base.h"
 
 namespace MyCryptoLib
 {
-class Streebog : public IHash
+class Streebog : public HashBase
 {
 public:
-    Streebog() : IHash(64, "Streebog"),
+    Streebog() : HashBase(64, "Streebog"),
         h(64),
         N(64),
         Sigma(64)

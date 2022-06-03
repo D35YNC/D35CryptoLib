@@ -3,14 +3,14 @@
 
 //#include <algorithm>
 
-#include "ihash.h"
+#include "hash_base.h"
 
 namespace MyCryptoLib
 {
-class SHA256: public IHash
+class SHA256: public HashBase
 {
 public:
-    SHA256() : IHash(32, "SHA256") { };
+    SHA256() : HashBase(32, "SHA256") { };
     void update(const std::string&) override;
     void update(const std::vector<uint8_t>&) override;
     void update(std::ifstream&) override;

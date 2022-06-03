@@ -8,10 +8,10 @@
 
 namespace MyCryptoLib
 {
-class IHash
+class HashBase
 {
 public:
-    IHash(int digestSize, std::string name) :
+    HashBase(int digestSize, std::string name) :
         _digest(digestSize),
         _name(name)
     { }

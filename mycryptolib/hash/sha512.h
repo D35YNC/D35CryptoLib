@@ -1,14 +1,14 @@
 #ifndef SHA512_H
 #define SHA512_H
 
-#include "ihash.h"
+#include "hash_base.h"
 
 namespace MyCryptoLib
 {
-class SHA512 : public IHash
+class SHA512 : public HashBase
 {
 public:
-    SHA512() : IHash(64, "SHA512") { };
+    SHA512() : HashBase(64, "SHA512") { };
     void update(const std::string&) override;
     void update(const std::vector<uint8_t>&) override;
     void update(std::ifstream&) override;
