@@ -7,69 +7,56 @@
 
 #include <NTL/ZZ.h>
 
+#include "../exceptions.h"
+
+#include "../encoding/base64.h"
+#include "../encoding/pkcs8.h"
+#include "../encoding/pkcs12.h"
+
 namespace MyCryptoLib
 {
 
 class ElGamalKey
 {
 public:
-    ElGamalKey(NTL::ZZ a) :
-        a(a), p(NTL::conv<NTL::ZZ>(0)), alpha(NTL::conv<NTL::ZZ>(0)), beta(NTL::conv<NTL::ZZ>(0))
-    { }
-    ElGamalKey(NTL::ZZ p, NTL::ZZ alpha, NTL::ZZ beta) :
-        a(NTL::conv<NTL::ZZ>(0)), p(p), alpha(alpha), beta(beta)
-    { }
+    // Custom
     ElGamalKey(NTL::ZZ a, NTL::ZZ p, NTL::ZZ alpha, NTL::ZZ beta) :
         a(a), p(p), alpha(alpha), beta(beta)
     { }
+    // Privkey
+    ElGamalKey(NTL::ZZ a) :
+        a(a), p(NTL::conv<NTL::ZZ>(0)), alpha(NTL::conv<NTL::ZZ>(0)), beta(NTL::conv<NTL::ZZ>(0))
+    { }
+    // Pubkey
+    ElGamalKey(NTL::ZZ p, NTL::ZZ alpha, NTL::ZZ beta) :
+        a(NTL::conv<NTL::ZZ>(0)), p(p), alpha(alpha), beta(beta)
+    { }
 
-    static ElGamalKey generate(size_t bitSize)
-    {
-        std::vector<unsigned char> seed(512, 0x00);
-        std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX - 1);
-        std::random_device dev_random("/dev/random");
-        for (int i = 0; i < seed.size(); i++)
-        {
-            seed[i] = dist(dev_random);
-        }
-        NTL::SetSeed(seed.data(), seed.size());
+    static ElGamalKey generate(size_t bitSize);
+    static ElGamalKey fromPKCS8(PKCS8 *pkcs8obj);
+    static ElGamalKey fromPKCS12(PKCS12 *pkcs12obj);
+    static ElGamalKey fromPKCS8File(const std::string &filename);
+    static ElGamalKey fromPKCS12File(const std::string &filename);
 
-        NTL::ZZ p;
-        NTL::ZZ alpha;
-        NTL::ZZ beta;
-        NTL::ZZ phi;
+    bool isPrivate() const;
+    bool canSign() const;
+    bool canEncrypt() const;
+    bool canDecrypt() const;
+    size_t blockSize() const;
+    size_t size() const;
 
-        while (NTL::ProbPrime(p, 100) == 0)
-        {
-            alpha = NTL::GenGermainPrime_ZZ(static_cast<long>(bitSize));
-            p = (2 * alpha) + 1;
-            phi = p - 1;
-        }
+    PKCS12 exportPrivateKey() const;
+    PKCS8 exportPublicKey() const;
 
-        // phi = p - 1
-        // randomBnd = 0 <= ret <= n - 1
-        // чисто ради перестраховки от 0
-        phi = NTL::RandomBnd(phi - 2) + 1;
-        // a == phi
-        beta = NTL::PowerMod(alpha, phi, p);
+    std::vector<uint8_t> exportPrivateKeyBytes() const;
+    std::vector<uint8_t> exportPublicKeyBytes() const;
 
-        if (NTL::conv<int>(NTL::PowerMod(phi, p - 1, p)) != 1)
-        {
-            throw std::exception(); // Что то пошло не так. ХЗ как выбирать альфу. по идее так
-        }
-
-        return ElGamalKey(phi, p, alpha, beta);
-    }
-
-    bool isPrivate() const
-    {
-        return a != 0;
-    }
-    size_t size() const
-    {
-        return NTL::NumBytes(a);
-    }
-
+    // pubk
+    NTL::ZZ getAlpha() const;
+    NTL::ZZ getBeta() const;
+    NTL::ZZ getP() const;
+    //privk
+    NTL::ZZ getA() const;
 private:
     NTL::ZZ a;
     NTL::ZZ p;
