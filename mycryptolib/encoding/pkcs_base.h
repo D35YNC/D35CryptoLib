@@ -8,7 +8,7 @@
 #include <fstream>
 
 #include "base64.h"
-#include<iostream>
+
 namespace MyCryptoLib
 {
 class PKCSBase
@@ -26,7 +26,7 @@ public:
         }
     }
 
-    std::vector<uint8_t> toBytes()
+    std::vector<uint8_t> toBytes() const
     {
         size_t size = 0;
         for (const std::pair<int, std::vector<uint8_t>> &pair : pkcsData)
@@ -55,7 +55,7 @@ public:
         return result;
     }
 
-    std::vector<uint8_t> toPem()
+    std::vector<uint8_t> toPem() const
     {
         std::stringstream ss;
 

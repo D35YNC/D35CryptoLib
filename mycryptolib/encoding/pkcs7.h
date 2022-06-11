@@ -14,7 +14,9 @@ public:
 
     std::vector<uint8_t> getData() const;
 
-    static PKCS7 packEncryptedPKCS7(uint8_t version, const std::string &contentType, const std::string &encryptAlgorythmId, const std::vector<uint8_t> &encryptedData);
+    static PKCS7 fromFile(const std::string &filename);
+    static PKCS7 create(uint8_t version, const std::string &contentType, const std::string &encryptAlgorithmId, const std::vector<uint8_t> &encryptedData);
+
 private:
     PKCS7() : PKCSBase("", "") {}
 };
