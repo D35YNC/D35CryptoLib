@@ -126,7 +126,7 @@ size_t MyCryptoLib::RSAKey::size() const
     return NTL::conv<size_t>(NTL::NumBytes(this->n));
 }
 
-MyCryptoLib::PKCS12 MyCryptoLib::RSAKey::exportPrivateKey()
+MyCryptoLib::PKCS12 MyCryptoLib::RSAKey::exportPrivateKey() const
 {
     std::map<int, std::vector<uint8_t>> pkcsMap;
 
@@ -147,7 +147,7 @@ MyCryptoLib::PKCS12 MyCryptoLib::RSAKey::exportPrivateKey()
     return PKCS12("RSA", pkcsMap);
 }
 
-MyCryptoLib::PKCS8 MyCryptoLib::RSAKey::exportPublicKey()
+MyCryptoLib::PKCS8 MyCryptoLib::RSAKey::exportPublicKey() const
 {
     std::map<int, std::vector<uint8_t>> pkcsMap;
 
@@ -164,12 +164,12 @@ MyCryptoLib::PKCS8 MyCryptoLib::RSAKey::exportPublicKey()
     return PKCS8("RSA", pkcsMap);
 }
 
-std::vector<uint8_t> MyCryptoLib::RSAKey::exportPrivateKeyBytes()
+std::vector<uint8_t> MyCryptoLib::RSAKey::exportPrivateKeyBytes() const
 {
     return this->exportPrivateKey().toBytes();
 }
 
-std::vector<uint8_t> MyCryptoLib::RSAKey::exportPublicKeyBytes()
+std::vector<uint8_t> MyCryptoLib::RSAKey::exportPublicKeyBytes() const
 {
     return this->exportPublicKey().toBytes();
 }

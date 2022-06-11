@@ -1,5 +1,7 @@
 #include "rsa.h"
-#include <iomanip>
+
+#include "../utils.h"
+
 std::vector<uint8_t> MyCryptoLib::RSA::encrypt(const std::vector<uint8_t> &data, const RSAKey &key)
 {
     if (!key.canEncrypt())
@@ -15,9 +17,8 @@ std::vector<uint8_t> MyCryptoLib::RSA::encrypt(const std::vector<uint8_t> &data,
 
     std::vector<uint8_t> encryptedData;
     encryptedData.reserve(paddedData.size());
-    int blocks_count = static_cast<int>(paddedData.size() / key.blockSize());
-
-    for (int i = 0; i < static_cast<int>(paddedData.size() / key.blockSize()); i++)
+    int blocksCount = static_cast<int>(paddedData.size() / key.blockSize());
+    for (int i = 0; i < blocksCount; i++)
     {
         std::vector<uint8_t> block(paddedData.begin() + (i * key.blockSize()), paddedData.begin() + (i * key.blockSize()) + key.blockSize());
         this->crypt(block, key.getPublicExponent(), key.getModulus());
@@ -25,6 +26,7 @@ std::vector<uint8_t> MyCryptoLib::RSA::encrypt(const std::vector<uint8_t> &data,
     }
     return encryptedData;
 }
+
 
 std::vector<uint8_t> MyCryptoLib::RSA::decrypt(const std::vector<uint8_t> &data, const RSAKey &key)
 {
@@ -41,9 +43,8 @@ std::vector<uint8_t> MyCryptoLib::RSA::decrypt(const std::vector<uint8_t> &data,
     std::vector<uint8_t> decryptedData;
     decryptedData.reserve(data.size());
 
-    int bls = static_cast<int>(data.size() / key.size());
-
-    for (int i = 0; i < static_cast<int>(data.size() / key.size()); i++)
+    int blocksCount = static_cast<int>(data.size() / key.size());
+    for (int i = 0; i < blocksCount; i++)
     {
         std::vector<uint8_t> block(data.begin() + (i * key.size()), data.begin() + (i * key.size()) + key.size());
         this->crypt(block, key.getPrivateExponent(), key.getModulus());
@@ -53,97 +54,120 @@ std::vector<uint8_t> MyCryptoLib::RSA::decrypt(const std::vector<uint8_t> &data,
     return decryptedData;
 }
 
-/*
-
-std::vector<uint8_t> MyCryptoLib::RSA::encrypt(const std::vector<uint8_t> &data, const RSAKey &key)
-{
-    if (!key.canEncrypt())
-    {
-        throw MyCryptoLib::WrongKeyException("Public key need for encrypt");
-    }
-    std::vector<uint8_t> paddedData = data;
-    if (paddedData.size() % key.size() != 0)
-    {
-        this->pad(paddedData, key.size());
-    }
-
-    this->crypt(paddedData, key.getPublicExponent(), key.getModulus());
-    return paddedData;
-}
-
-
-std::vector<uint8_t> MyCryptoLib::RSA::decrypt(const std::vector<uint8_t> &data, const RSAKey &key)
-{
-    if (!key.canDecrypt())
-    {
-        throw MyCryptoLib::WrongKeyException("Private key need for decrypt");
-    }
-
-    if (data.size() % key.size() != 0)
-    {
-        throw std::exception();//creat
-    }
-
-    std::vector<uint8_t> decryptedData = data;
-    this->crypt(decryptedData, key.getPrivateExponent(), key.getModulus());
-
-    return decryptedData;
-}
-
-void MyCryptoLib::RSA::pad(std::vector<uint8_t> &data, size_t blockSize)
-{
-    std::vector<uint8_t> result(blockSize, 0x00);
-//    size_t oldSize = data.size();
-//    data.resize(blockSize - (oldSize % blockSize) + oldSize);
-
-    std::copy(data.begin(), data.end(), result.end() - data.size());
-    data = result;
-
-//    oldSize -= data.size(); // zeros count
-//    if (oldSize > 2)
-//    {
-//        data[data.size() - 1] = static_cast<uint8_t>(oldSize);
-//        data[data.size() - 2] = static_cast<uint8_t>(oldSize >> 8);
-//    }
-}
-*/
-
 
 MyCryptoLib::PKCS7 MyCryptoLib::RSA::encrypt(const std::string &dataType, const std::vector<uint8_t> &data, const RSAKey &key)
 {
-    return MyCryptoLib::PKCS7::packEncryptedPKCS7(0, dataType, "RSA-RAW", this->encrypt(data, key));
+    return MyCryptoLib::PKCS7::create(0, dataType, "RSA-RAW", this->encrypt(data, key));
 }
+
 
 std::vector<uint8_t> MyCryptoLib::RSA::decrypt(const PKCS7 &pkcs7obj, const RSAKey &key)
 {
     return this->decrypt(pkcs7obj.getData(), key);
 }
 
-//MyCryptoLib::PKCS7 MyCryptoLib::RSA::signPKCS7(MyCryptoLib::IHash *hash, const std::vector<uint8_t> &data, const RSAKey &key)
-//{
-//    if (hash == nullptr)
-//    {
-//        throw std::exception();
-//    }
-//    hash->update(data);
-//    std::vector<uint8_t> digest = hash->digest();
-//    return PKCS7(1, "data", "D35YNC", hash->name(), "RSA-RAW", this->encrypt(digest, key));
-//}
+
+MyCryptoLib::CAdES MyCryptoLib::RSA::sign(
+        const std::string &username,
+        const std::vector<uint8_t> &pubKeyHash,
+        const std::string &data,
+        MyCryptoLib::HashBase *hash,
+        const RSAKey &key)
+{
+    return MyCryptoLib::RSA::sign(username, pubKeyHash, "TEXT", std::vector<uint8_t>(data.begin(), data.end()), hash, key);
+}
+
+
+MyCryptoLib::CAdES MyCryptoLib::RSA::sign(
+        const std::string &username,
+        const std::vector<uint8_t> &pubKeyHash,
+        const std::string &contentType,
+        const std::vector<uint8_t> &data,
+        MyCryptoLib::HashBase *hash,
+        const RSAKey &key)
+{
+    hash->update(data);
+    std::vector<uint8_t> originalHash = hash->digest();
+    std::vector<uint8_t> signature = hash->digest();
+
+    this->crypt(signature, key.getPrivateExponent(), key.getModulus());
+    return CAdES::create(1, contentType, username, pubKeyHash, hash->name(), "RSAdsi", originalHash, signature);
+}
+
+
+MyCryptoLib::CAdES MyCryptoLib::RSA::sign(
+        const std::string &username,
+        const std::vector<uint8_t> &pubKeyHash,
+        const std::string &contentType,
+        const std::string &filename,
+        MyCryptoLib::HashBase *hash,
+        const RSAKey &key)
+{
+    std::ifstream signingFile(filename);
+    hash->update(signingFile, -1);
+    std::vector<uint8_t> originalHash = hash->digest();
+    std::vector<uint8_t> signature = hash->digest();
+
+    this->crypt(signature, key.getPrivateExponent(), key.getModulus());
+    return CAdES::create(1, contentType, username, pubKeyHash, hash->name(), "RSAdsi", originalHash, signature);
+}
+
+void MyCryptoLib::RSA::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &data, const RSAKey &key)
+{
+    HashBase *hash = MyCryptoLib::hashIdToHashPtr(userCAdES.getHashAlgorithmId());
+
+    hash->update(data);
+    std::vector<uint8_t> signature = hash->digest();
+    delete hash;
+
+    crypt(signature, key.getPrivateExponent(), key.getModulus());
+
+    userCAdES.appendCASign(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(), caPubKeyHash, signature);
+}
+
+
+bool MyCryptoLib::RSA::checkSign(const std::vector<uint8_t> &data, const MyCryptoLib::CAdES &cades, const RSAKey &key)
+{
+    std::vector<uint8_t> digest = cades.getContentHash();
+    std::vector<uint8_t> signature = cades.getSignature();
+
+    this->crypt(signature, key.getPublicExponent(), key.getModulus());
+    signature.resize(digest.size());
+
+    HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
+    hash->update(data);
+    std::vector<uint8_t> actualDigest = hash->digest();
+    delete hash;
+
+    return digest == actualDigest && digest == signature;
+}
+
+bool MyCryptoLib::RSA::checkCASign(const std::vector<uint8_t> &data, const CAdES &cades, const RSAKey &caPubKey)
+{
+    std::vector<uint8_t> digest = cades.getContentHash();
+    std::vector<uint8_t> signature = cades.getCASignature();
+
+    this->crypt(signature, caPubKey.getPublicExponent(), caPubKey.getModulus());
+    signature.resize(digest.size());
+
+    HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
+    hash->update(data);
+    std::vector<uint8_t> actualDigest = hash->digest();
+    delete hash;
+
+    return digest == actualDigest && digest == signature;
+}
+
 
 void MyCryptoLib::RSA::crypt(std::vector<uint8_t> &data, const NTL::ZZ &power, const NTL::ZZ &n)
 {
     NTL::ZZ intData = NTL::ZZFromBytes(data.data(), data.size());
     NTL::ZZ intResult = NTL::PowerMod(intData, power, n);
-
     data.resize(NTL::NumBytes(n));
-
-    if (data.size() != 512)
-    {
-        std::cout << 'X';
-    }
 
     NTL::BytesFromZZ(data.data(), intResult, data.size());
 }
+
 
 void MyCryptoLib::RSA::pad(std::vector<uint8_t> &data, size_t blockSize)
 {
@@ -159,6 +183,7 @@ void MyCryptoLib::RSA::pad(std::vector<uint8_t> &data, size_t blockSize)
     }
     data = result;
 }
+
 
 void MyCryptoLib::RSA::unpad(std::vector<uint8_t> &data)
 {

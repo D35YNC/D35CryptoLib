@@ -50,16 +50,17 @@ public:
     static RSAKey fromPKCS12File(const std::string &filename);
 
     bool isPrivate() const;
+    bool canSign() const;
     bool canEncrypt() const;
     bool canDecrypt() const;
     size_t blockSize() const;
     size_t size() const;
 
-    PKCS12 exportPrivateKey();
-    PKCS8 exportPublicKey();
+    PKCS12 exportPrivateKey() const;
+    PKCS8 exportPublicKey() const;
 
-    std::vector<uint8_t> exportPrivateKeyBytes();
-    std::vector<uint8_t> exportPublicKeyBytes();
+    std::vector<uint8_t> exportPrivateKeyBytes() const;
+    std::vector<uint8_t> exportPublicKeyBytes() const;
 
     NTL::ZZ getModulus() const;
     NTL::ZZ getPublicExponent() const;
