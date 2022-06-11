@@ -15,10 +15,10 @@ public:
         _digest(digestSize),
         _name(name)
     { }
-
-    virtual void update(const std::string&) = 0;
-    virtual void update(const std::vector<uint8_t>&) = 0;
-    virtual void update(std::ifstream&) = 0;
+    virtual ~HashBase() = default;
+    virtual void update(const std::string &data) = 0;
+    virtual void update(const std::vector<uint8_t> &data) = 0;
+    virtual void update(std::ifstream& file, size_t bytesCount = -1) = 0;
 
     virtual size_t blockSize() = 0;
 

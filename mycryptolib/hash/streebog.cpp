@@ -22,9 +22,9 @@ void MyCryptoLib::Streebog::update(const std::vector<uint8_t> &data)
     this->_finalize(buffer);
 }
 
-void MyCryptoLib::Streebog::update(std::ifstream &data)
+void MyCryptoLib::Streebog::update(std::ifstream &file, size_t bytesCount)
 {
-    if (!data.is_open())
+    if (!file.is_open())
     {
         return; // elpase execpions
     }
@@ -33,15 +33,24 @@ void MyCryptoLib::Streebog::update(std::ifstream &data)
 
     // get file size
 
-    data.seekg(0, std::ios::end);
-    size_t fileSize = data.tellg();
-    data.seekg(0, std::ios::beg);
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    if (0 > bytesCount && bytesCount <= fileSize)
+    {
+        fileSize = bytesCount;
+    }
+    else if (bytesCount > fileSize)
+    {
+        std::runtime_error("Cant read > bytes than file size");
+    }
 
     //process first I full blocks
     std::vector<uint8_t> readBuffer(4096);
     for (int i = 0; i < (int)(fileSize / 4096); i++)
     {
-        data.read((char*)readBuffer.data(), readBuffer.size());
+        file.read((char*)readBuffer.data(), readBuffer.size());
         std::reverse(readBuffer.begin(), readBuffer.end());
         this->_updateState(readBuffer); // ALERT SLOW SLOW AMOFUS
         readBuffer.resize(4096);
@@ -50,7 +59,7 @@ void MyCryptoLib::Streebog::update(std::ifstream &data)
     //process last block wth padding
     int lastBlockSize = (int)(fileSize % 4096);
     readBuffer.resize(lastBlockSize);
-    data.read((char*)readBuffer.data(), readBuffer.size());
+    file.read((char*)readBuffer.data(), readBuffer.size());
     std::reverse(readBuffer.begin(), readBuffer.end());
     this->_pad(readBuffer);
     this->_updateState(readBuffer);
@@ -129,6 +138,7 @@ void MyCryptoLib::Streebog::setMode(int __digestSize)
         throw "Incorrect digest size. Must be 256 or 512";
     }
     this->_setNewDigestSize(__digestSize);
+    this->_name = "Streebog" + std::to_string(__digestSize);
 }
 
 std::vector<uint8_t> MyCryptoLib::Streebog::_add512(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b)

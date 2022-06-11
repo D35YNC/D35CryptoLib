@@ -9,9 +9,9 @@ class SHA512 : public HashBase
 {
 public:
     SHA512() : HashBase(64, "SHA512") { };
-    void update(const std::string&) override;
-    void update(const std::vector<uint8_t>&) override;
-    void update(std::ifstream&) override;
+    void update(const std::string &data) override;
+    void update(const std::vector<uint8_t> &data) override;
+    void update(std::ifstream &file, size_t bytesCount = -1) override;
     size_t blockSize() override;
 private:
     void _init();

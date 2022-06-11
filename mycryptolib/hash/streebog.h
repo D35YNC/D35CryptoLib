@@ -10,15 +10,15 @@ namespace MyCryptoLib
 class Streebog : public HashBase
 {
 public:
-    Streebog() : HashBase(64, "Streebog"),
+    Streebog() : HashBase(64, "Streebog512"),
         h(64),
         N(64),
         Sigma(64)
     {};
     void setMode(int);
-    void update(const std::string&) override;
-    void update(const std::vector<uint8_t>&) override;
-    void update(std::ifstream&) override;
+    void update(const std::string &data) override;
+    void update(const std::vector<uint8_t> &data) override;
+    void update(std::ifstream &file, size_t bytesCount = -1) override;
     size_t blockSize() override;
 private:
     std::vector<uint8_t> h;

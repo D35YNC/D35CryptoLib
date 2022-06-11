@@ -13,7 +13,7 @@ public:
     SHA256() : HashBase(32, "SHA256") { };
     void update(const std::string&) override;
     void update(const std::vector<uint8_t>&) override;
-    void update(std::ifstream&) override;
+    void update(std::ifstream& file, size_t bytesCount = -1) override;
     size_t blockSize() override;
 
 private:

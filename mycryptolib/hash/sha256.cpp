@@ -27,9 +27,9 @@ void MyCryptoLib::SHA256::update(const std::vector<uint8_t> &data)
     this->_finalize();
 }
 
-void MyCryptoLib::SHA256::update(std::ifstream &data)
+void MyCryptoLib::SHA256::update(std::ifstream &file, size_t bytesCount)
 {
-    if (!data.is_open())
+    if (!file.is_open())
     {
         return; // elpase execpions
     }
@@ -37,22 +37,31 @@ void MyCryptoLib::SHA256::update(std::ifstream &data)
     this->_init();
 
     // get file size
-    data.seekg(0, std::ios::end);
-    size_t fileSize = data.tellg();
-    data.seekg(0, std::ios::beg);
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    if (0 > bytesCount && bytesCount <= fileSize)
+    {
+        fileSize = bytesCount;
+    }
+    else if (bytesCount > fileSize)
+    {
+        std::runtime_error("Cant read > bytes than file size");
+    }
 
     //process first I full blocks
     std::vector<uint8_t> readBuffer(4096);
     for (int i = 0; i < (int)(fileSize / 4096); i++)
     {
-        data.read((char*)readBuffer.data(), readBuffer.size());
+        file.read((char*)readBuffer.data(), readBuffer.size());
         this->_updateState(readBuffer);
     }
 
     //process last block wth padding
     int lastBlockSize = (int)(fileSize % 4096);
     readBuffer.resize(lastBlockSize);
-    data.read((char*)readBuffer.data(), readBuffer.size());
+    file.read((char*)readBuffer.data(), readBuffer.size());
 
     this->_pad(readBuffer, fileSize);
     this->_updateState(readBuffer);
