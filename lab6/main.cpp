@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     // Я устал парсить аргументы и мне лень их перемещать в отдельный хедер
 
     MyCryptoLib::Key k = MyCryptoLib::Key::generate(256);
-    std::cout << k.exportB64() << std::endl;
+    std::cout << k.b64() << std::endl;
 
     MyCryptoLib::SHA256 sha;
     // here setup hsah

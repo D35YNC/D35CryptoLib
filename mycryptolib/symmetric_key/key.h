@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <sstream> // |
+#include <iomanip> // +- for std::string rawString(){...}
 #include <random>
 #include <stdexcept> // for invalid_argument exception
 
@@ -34,14 +36,27 @@ public:
         return this->bytes.size();
     }
 
-    std::string exportB64() const
+    std::string b64() const
     {
         return MyCryptoLib::Base64::b64Encode(this->bytes);
     }
 
-    std::vector<uint8_t> exportRaw() const
+    std::vector<uint8_t> raw() const
     {
         return this->bytes;
+    }
+
+    std::string rawString() const
+    {
+        std::stringstream ss;
+        ss << std::setfill('0') << std::hex;
+
+        for (int i = 0; i < this->bytes.size(); i++)
+        {
+            ss << std::setw(2) << static_cast<unsigned int>(this->bytes[i]);
+        }
+
+        return ss.str();
     }
 
     static Key generate(size_t bitSize)
