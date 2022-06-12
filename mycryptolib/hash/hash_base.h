@@ -18,7 +18,7 @@ public:
     virtual ~HashBase() = default;
     virtual void update(const std::string &data) = 0;
     virtual void update(const std::vector<uint8_t> &data) = 0;
-    virtual void update(std::ifstream& file, size_t bytesCount = -1) = 0;
+    virtual void update(std::ifstream& file) = 0;
 
     virtual size_t blockSize() = 0;
 

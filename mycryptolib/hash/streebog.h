@@ -18,7 +18,7 @@ public:
     void setMode(int);
     void update(const std::string &data) override;
     void update(const std::vector<uint8_t> &data) override;
-    void update(std::ifstream &file, size_t bytesCount = -1) override;
+    void update(std::ifstream &file) override;
     size_t blockSize() override;
 private:
     std::vector<uint8_t> h;
