@@ -58,24 +58,44 @@ MyCryptoLib::CAdES MyCryptoLib::FiatShamir::sign(const std::string &username, co
     return MyCryptoLib::CAdES::create(1, contentType, username, pubKeyHash, hash->name(), "Fiat-Shamir", dataHash, signature);
 }
 
-void MyCryptoLib::FiatShamir::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &data, const FiatShamirKey &caPrivKey)
+void MyCryptoLib::FiatShamir::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &signedMessage, const FiatShamirKey &caPrivKey)
 {
     // сделать независимость хэшей ЦА и клиента
     if (userCAdES.getHashAlgorithmId() != caPrivKey.getHashId())
     {
         throw std::runtime_error("wrong hashes error");
     }
+
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+    std::vector<uint8_t> data(signedMessage.begin(), signedMessage.end());
+
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(userCAdES.getHashAlgorithmId());
     hash->update(data);
     std::vector<uint8_t> dataHash = hash->digest();
+
+    size_t dataSize = data.size();
+    data.resize(dataSize + 8);
+    data[dataSize    ] = static_cast<uint8_t>(timestamp >> 56);
+    data[dataSize + 1] = static_cast<uint8_t>(timestamp >> 48);
+    data[dataSize + 2] = static_cast<uint8_t>(timestamp >> 40);
+    data[dataSize + 3] = static_cast<uint8_t>(timestamp >> 32);
+    data[dataSize + 4] = static_cast<uint8_t>(timestamp >> 24);
+    data[dataSize + 5] = static_cast<uint8_t>(timestamp >> 16);
+    data[dataSize + 6] = static_cast<uint8_t>(timestamp >> 8 );
+    data[dataSize + 7] = static_cast<uint8_t>(timestamp >> 0 );
+
+    hash->update(signedMessage);
+    std::vector<uint8_t> signedMessageDigest = hash->digest();
+
     std::vector<uint8_t> signature;
-
     sign(signature, data, caPrivKey.getN(), caPrivKey.getA(), hash);
+    delete hash;
 
-    userCAdES.appendCASign(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(), caPubKeyHash, signature);
+    userCAdES.appendCASign(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(), caPubKeyHash, signedMessageDigest, signature);
 }
 
-bool MyCryptoLib::FiatShamir::checkSign(const std::vector<uint8_t> &data, const CAdES &cades, const FiatShamirKey &key)
+bool MyCryptoLib::FiatShamir::checkSign(const std::vector<uint8_t> &userSignedMessage, const CAdES &cades, const FiatShamirKey &key)
 {
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
     std::vector<uint8_t> cadesSign = cades.getSignature();
@@ -97,7 +117,7 @@ bool MyCryptoLib::FiatShamir::checkSign(const std::vector<uint8_t> &data, const 
         }
     }
 
-    std::vector<uint8_t> dataBytes(data.begin(), data.end());
+    std::vector<uint8_t> dataBytes(userSignedMessage.begin(), userSignedMessage.begin() + cades.getUserSignHeaderPos());
     std::vector<uint8_t> wBytes(NTL::NumBytes(w));
     NTL::BytesFromZZ(wBytes.data(), w, wBytes.size());
     dataBytes.resize(dataBytes.size() + wBytes.size());
@@ -107,19 +127,20 @@ bool MyCryptoLib::FiatShamir::checkSign(const std::vector<uint8_t> &data, const 
     return hash->digest() == s;
 }
 
-bool MyCryptoLib::FiatShamir::checkCASign(const std::vector<uint8_t> &data, const CAdES &cades, const FiatShamirKey &caPubKey)
+bool MyCryptoLib::FiatShamir::checkCASign(const std::vector<uint8_t> &caSignedMessage, const CAdES &cades, const FiatShamirKey &caPubKey)
 {
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
+    uint64_t timestamp = cades.getCATimestamp();
     std::vector<uint8_t> cadesSign = cades.getCASignature();
     std::vector<uint8_t> s(cadesSign.begin(), cadesSign.begin() + hash->digestSize());
     std::vector<uint8_t> t(cadesSign.begin() + hash->digestSize(), cadesSign.end());
 
-
     NTL::ZZ tInt = NTL::ZZFromBytes(t.data(), t.size());
-    NTL::ZZ w(tInt * tInt);
+    NTL::ZZ w = tInt * tInt;
     std::vector<NTL::ZZ> b = caPubKey.getB();
     NTL::ZZ n = caPubKey.getN();
     int b_i = 0;
+
     for (int i = 0; i < hash->digestSize(); i++)
     {
         for (int offset = 0; offset < 8; offset++)
@@ -129,12 +150,29 @@ bool MyCryptoLib::FiatShamir::checkCASign(const std::vector<uint8_t> &data, cons
         }
     }
 
-    std::vector<uint8_t> dataBytes(data.begin(), data.end());
+    std::vector<uint8_t> data(caSignedMessage.begin(), caSignedMessage.begin() + cades.getCASignHeaderPos());
+    hash->update(data);
+    if (hash->digest() != cades.getCASignedMessageDigest())
+    {
+        return false;
+    }
+
+    size_t dataSize = data.size();
+    data.resize(dataSize + 8);
+    data[dataSize    ] = static_cast<uint8_t>(timestamp >> 56);
+    data[dataSize + 1] = static_cast<uint8_t>(timestamp >> 48);
+    data[dataSize + 2] = static_cast<uint8_t>(timestamp >> 40);
+    data[dataSize + 3] = static_cast<uint8_t>(timestamp >> 32);
+    data[dataSize + 4] = static_cast<uint8_t>(timestamp >> 24);
+    data[dataSize + 5] = static_cast<uint8_t>(timestamp >> 16);
+    data[dataSize + 6] = static_cast<uint8_t>(timestamp >> 8 );
+    data[dataSize + 7] = static_cast<uint8_t>(timestamp >> 0 );
+
     std::vector<uint8_t> wBytes(NTL::NumBytes(w));
     NTL::BytesFromZZ(wBytes.data(), w, wBytes.size());
-    dataBytes.resize(dataBytes.size() + wBytes.size());
-    std::copy(wBytes.begin(), wBytes.end(), dataBytes.begin() + (dataBytes.size() - wBytes.size()));
-    hash->update(dataBytes);
+    data.resize(data.size() + wBytes.size());
+    std::copy(wBytes.begin(), wBytes.end(), data.begin() + (data.size() - wBytes.size()));
+    hash->update(data);
 
     return hash->digest() == s;
 }
@@ -144,14 +182,13 @@ void MyCryptoLib::FiatShamir::sign(std::vector<uint8_t> &signature, const std::v
     NTL::ZZ r = NTL::RandomBnd(n - 1) + 1;
     NTL::ZZ u = NTL::PowerMod(r, 2, n);
 
-    std::vector<uint8_t> dataBytes(data.begin(), data.end());
-
     std::vector<uint8_t> uBytes(NTL::NumBytes(u));
     NTL::BytesFromZZ(uBytes.data(), u, uBytes.size());
 
-    dataBytes.resize(dataBytes.size() + uBytes.size());
-    std::copy(uBytes.begin(), uBytes.end(), dataBytes.begin() + (dataBytes.size() - uBytes.size()));
-    hash->update(dataBytes);
+    std::vector<uint8_t> datarw(data.begin(), data.end());
+    datarw.resize(datarw.size() + uBytes.size());
+    std::copy(uBytes.begin(), uBytes.end(), datarw.begin() + data.size());
+    hash->update(datarw);
     signature = hash->digest();
 
     NTL::ZZ t = r;

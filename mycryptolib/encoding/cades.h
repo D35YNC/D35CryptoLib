@@ -21,11 +21,10 @@ public:
     static CAdES create(uint8_t version, const std::string &contentType, const std::string &signerId, const std::vector<uint8_t> &signerPubKeyHash,
                         const std::string &hashingAlgorithmId, const std::string &signingAlgorithmId, const std::vector<uint8_t> &originalHash,
                         const std::vector<uint8_t> &signature);
-    static CAdES fromFileBytes(std::vector<uint8_t> &buffer);
     static CAdES fromBytes(const std::vector<uint8_t> &buffer);
     static CAdES fromFile(const std::string &filename);
 
-    void appendCASign(uint64_t time, const std::vector<uint8_t> &pubKeyHash, const std::vector<uint8_t> &signature);
+    void appendCASign(uint64_t time, const std::vector<uint8_t> &pubKeyHash, const std::vector<uint8_t> &signedMessageDigest, const std::vector<uint8_t> &signature);
 
     // Get sign info
     uint8_t getVersion() const;
@@ -41,10 +40,16 @@ public:
     bool isSignedByCA() const;
     uint64_t getCATimestamp() const;
     std::vector<uint8_t> getCAKeyFingerprint() const;
+    std::vector<uint8_t> getCASignedMessageDigest() const;
     std::vector<uint8_t> getCASignature() const;
 
+    size_t getUserSignHeaderPos() const;
+    size_t getUserSignTerminatorPos() const;
+    size_t getCASignHeaderPos() const;
+    size_t getCASignTerminatorPos() const;
+
     // Savin
-    std::vector<uint8_t> toBytes(bool includeHeaders = true) const;
+    std::vector<uint8_t> toBytes() const;
     std::vector<uint8_t> toPem() const;
 
     friend std::ostream& operator<<(std::ostream &out, const CAdES &cadesSign)
@@ -93,6 +98,14 @@ public:
             std::string caKeyFingerprint = ss.str();
 
             ss.str(std::string());
+            buf = cadesSign.getCASignedMessageDigest();
+            ss << std::hex << std::setfill('0');
+            for (std::vector<uint8_t>::const_iterator it = buf.begin(); it != buf.end(); it++) {
+                ss << std::setw(2) << static_cast<unsigned>(*it);
+            }
+            std::string caSignedMessageDigest = ss.str();
+
+            ss.str(std::string());
             buf = cadesSign.getCASignature();
             ss << std::hex << std::setfill('0');
             for (std::vector<uint8_t>::const_iterator it = buf.begin(); it != buf.end(); it++) {
@@ -103,6 +116,7 @@ public:
             out << std::endl <<
                    "CA Timestamp: " << cadesSign.getCATimestamp() << std::endl <<
                    "CA PubKey Fingerprint: " << caKeyFingerprint << std::endl <<
+                   "CA Signed Message Digest: " << caSignedMessageDigest << std::endl <<
                    "CA Signature: " << caSignature;
         }
 
@@ -110,16 +124,23 @@ public:
         return out;
     }
 
-protected:
+private:
     CAdES() {}
     CAdES(const std::map<int, std::vector<uint8_t>> &signData);
-    void setCASignData(const std::map<int, std::vector<uint8_t>> &caSign);
+    static CAdES parseBuffers(const std::vector<uint8_t> &buffer, const std::vector<uint8_t> &userSign = {});
 
     std::map<int, std::vector<uint8_t>> signData;
     std::map<int, std::vector<uint8_t>> caSignData;
 
-    std::string pemHeader = "-----BEGIN CADES SIGNATURE-----";
-    std::string pemTerminator = "-----END CADES SIGNATURE-----";
+    size_t userSignHeaderPos;
+    size_t userSignTerminatorPos;
+    size_t caSignHeaderPos;
+    size_t caSignTerminatorPos;
+
+    static const inline std::string userSignHeader = "-----BEGIN CADES SIGNATURE-----";
+    static const inline std::string userSignTerminator = "-----END CADES SIGNATURE-----";
+    static const inline std::string caSignHeader = "-----BEGIN CA CADES SIGNATURE-----";
+    static const inline std::string caSignTerminator = "-----END CA CADES SIGNATURE-----";
 };
 
 }

@@ -23,8 +23,8 @@ public:
     CAdES sign(const std::string &username, const std::vector<uint8_t> &pubKeyHash, const std::string &contentType, const std::string &filename, MyCryptoLib::HashBase *hash, const ElGamalKey &key);
     void signCA(MyCryptoLib::CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &data, const ElGamalKey &caPrivKey);
 
-    bool checkSign(const std::vector<uint8_t> &data, const MyCryptoLib::CAdES &pkcs7obj, const ElGamalKey &key);
-    bool checkCASign(const std::vector<uint8_t> &data, const MyCryptoLib::CAdES &pkcs7obj, const ElGamalKey &caPubKey);
+    bool checkSign(const std::vector<uint8_t> &signedMessage, const MyCryptoLib::CAdES &cades, const ElGamalKey &pubKey);
+    bool checkCASign(const std::vector<uint8_t> &signedMessage, const MyCryptoLib::CAdES &cades, const ElGamalKey &caPubKey);
 private:
     void sign(std::vector<uint8_t> &signature, NTL::ZZ a, NTL::ZZ alpha, NTL::ZZ p);
 };

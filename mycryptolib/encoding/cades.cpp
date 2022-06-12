@@ -32,91 +32,106 @@ MyCryptoLib::CAdES MyCryptoLib::CAdES::create(uint8_t version, const std::string
     return CAdES(dataMap);
 }
 
-MyCryptoLib::CAdES MyCryptoLib::CAdES::fromFileBytes(std::vector<uint8_t> &buffer)
+MyCryptoLib::CAdES MyCryptoLib::CAdES::fromBytes(const std::vector<uint8_t> &buffer)
 {
-    std::string pemHeader = "-----BEGIN CADES SIGNATURE-----";
-    std::string pemTerminator = "-----END CADES SIGNATURE-----";
-
-    size_t headerPos = 0;
-    size_t terminatorPos = 0;
+    size_t userSignHeaderPos = std::string::npos;
+    size_t userSignTerminatorPos = std::string::npos;
+    size_t caSignHeaderPos = std::string::npos;
+    size_t caSignTerminatorPos = std::string::npos;
     size_t pos = 0;
-    // Сначала найти хедер и терминатор в файле
 
     while (pos < buffer.size())
     {
         std::string marker(buffer.begin() + pos, buffer.begin() + pos + 1024);
-        headerPos = marker.find(pemHeader);
-        if (headerPos != std::string::npos)
+
+        if (userSignHeaderPos == std::string::npos)
         {
-            headerPos += pos;
-            break;
+            userSignHeaderPos = marker.find(CAdES::userSignHeader);
+            if (userSignHeaderPos != std::string::npos)
+            {
+                userSignHeaderPos += pos;
+            }
         }
-        pos += 1024;
+        if (userSignTerminatorPos == std::string::npos)
+        {
+            userSignTerminatorPos = marker.find(CAdES::userSignTerminator);
+            if (userSignTerminatorPos != std::string::npos)
+            {
+                userSignTerminatorPos += pos;
+            }
+        }
+        if (caSignHeaderPos == std::string::npos)
+        {
+            caSignHeaderPos = marker.find(CAdES::caSignHeader);
+            if (caSignHeaderPos != std::string::npos)
+            {
+                caSignHeaderPos += pos;
+            }
+        }
+        if (caSignTerminatorPos == std::string::npos)
+        {
+            caSignTerminatorPos = marker.find(CAdES::caSignTerminator);
+            if (caSignTerminatorPos != std::string::npos)
+            {
+                caSignTerminatorPos += pos;
+            }
+        }
+
+        pos += 512;
     }
 
-    if (headerPos == std::string::npos)
+    if (userSignHeaderPos == std::string::npos)
     {
         throw MyCryptoLib::BadPKCSFileStructureException("Cant find pkcs sign header");
     }
-
-    while (pos < buffer.size())
-    {
-        std::string marker(buffer.begin() + pos, buffer.begin() + pos + 1024);
-        terminatorPos = marker.find(pemTerminator);
-        if (terminatorPos != std::string::npos)
-        {
-            terminatorPos += pos;
-            break;
-        }
-        pos += 1024;
-    }
-
-    if (terminatorPos == std::string::npos)
+    if (userSignTerminatorPos == std::string::npos)
     {
         throw MyCryptoLib::BadPKCSFileStructureException("Cant find pkcs sign terminator");
     }
-
-    if (terminatorPos < headerPos)
+    if (userSignHeaderPos > userSignTerminatorPos)
     {
         throw MyCryptoLib::BadPKCSFileStructureException("Confusing pkcs structure, cant read");
     }
 
-    std::vector<uint8_t> signBuffer(buffer.begin() + headerPos + pemHeader.size(), buffer.begin() + terminatorPos);
-    buffer.resize(headerPos);
-
-    return MyCryptoLib::CAdES::fromBytes(signBuffer);
+    std::vector<uint8_t> caSignBuffer;
+    std::vector<uint8_t> userSignBuffer(buffer.begin() + userSignHeaderPos + CAdES::userSignHeader.size(), buffer.begin() + userSignTerminatorPos);
+    if (caSignHeaderPos != caSignTerminatorPos && caSignHeaderPos != std::string::npos && caSignTerminatorPos != std::string::npos)
+    {
+        caSignBuffer = std::vector<uint8_t>(buffer.begin() + caSignHeaderPos + CAdES::caSignHeader.size(), buffer.begin() + caSignTerminatorPos);
+        MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::parseBuffers(userSignBuffer, caSignBuffer);
+        cades.userSignHeaderPos = userSignHeaderPos;
+        cades.userSignTerminatorPos = userSignTerminatorPos;
+        cades.caSignHeaderPos = caSignHeaderPos;
+        cades.caSignTerminatorPos = caSignTerminatorPos;
+        return cades;
+    }
+    MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::parseBuffers(userSignBuffer);
+    cades.userSignHeaderPos = userSignHeaderPos;
+    cades.userSignTerminatorPos = userSignTerminatorPos;
+    cades.caSignHeaderPos = caSignHeaderPos;
+    cades.caSignTerminatorPos = caSignTerminatorPos;
+    return cades;
 }
 
 
-MyCryptoLib::CAdES MyCryptoLib::CAdES::fromBytes(const std::vector<uint8_t> &buffer)
+MyCryptoLib::CAdES MyCryptoLib::CAdES::parseBuffers(const std::vector<uint8_t> &userSign, const std::vector<uint8_t> &caSign)
 {
     size_t pos = 0;
-    size_t size = 0;
     size_t fieldSize = 0;
     std::map<int, std::vector<uint8_t>> signMap;
 
-    if (!(buffer[0] == buffer[2] && buffer[0] == 0x0E &&
-          buffer[1] == buffer[3] && buffer[1] == 0x51))
-    {
-        throw std::runtime_error("Bad struct"); // Create
-    }
-    pos += 4;
-
-    size |= (buffer[pos++] << 8);
-    size |= (buffer[pos++]     );
-
-    while (pos < size) //??
+    while (pos < userSign.size())
     {
         // INCREMENT ALERT
-        fieldSize |= (buffer[pos++] << 8);
-        fieldSize |= (buffer[pos++]     );
+        fieldSize |= (userSign[pos++] << 8);
+        fieldSize |= (userSign[pos++]     );
 
         if (!(0 < fieldSize && fieldSize < 65536)) // Просто ограничение на всякий случай
         {
             throw std::runtime_error("bad field size, cant read");
         }
 
-        signMap[signMap.size()] = std::vector<uint8_t>(buffer.begin() + pos, buffer.begin() + pos + fieldSize);
+        signMap[signMap.size()] = std::vector<uint8_t>(userSign.begin() + pos, userSign.begin() + pos + fieldSize);
         pos += fieldSize;
         fieldSize = 0;
     }
@@ -128,37 +143,27 @@ MyCryptoLib::CAdES MyCryptoLib::CAdES::fromBytes(const std::vector<uint8_t> &buf
 
     CAdES cades = MyCryptoLib::CAdES(signMap);
 
-    if (pos < buffer.size())
-    {         //// CHEKC
-        if (!(buffer[pos] == buffer[pos + 2] && buffer[pos] == 0xCA &&
-              buffer[pos + 1] == buffer[pos + 3] && buffer[pos + 1] == 0x51))
-        {
-            throw std::runtime_error("Bad struct"); // Create
-        }
-        pos += 4;
-
-        size = 0;
-        size |= (buffer[pos++] << 8);
-        size |= (buffer[pos++]     );
-
+    if (!caSign.empty())
+    {
+        pos = 0;
         std::map<int, std::vector<uint8_t>> caSignMap;
-        while (pos - size < size) //??
+        while (pos < caSign.size())
         {
             // INCREMENT ALERT
-            fieldSize |= (buffer[pos++] << 8);
-            fieldSize |= (buffer[pos++]     );
+            fieldSize |= (caSign[pos++] << 8);
+            fieldSize |= (caSign[pos++]     );
 
             if (!(0 < fieldSize && fieldSize < 65536)) // Просто ограничение на всякий случай
             {
                 throw std::runtime_error("bad field size, cant read");
             }
 
-            caSignMap[caSignMap.size()] = std::vector<uint8_t>(buffer.begin() + pos, buffer.begin() + pos + fieldSize);
+            caSignMap[caSignMap.size()] = std::vector<uint8_t>(caSign.begin() + pos, caSign.begin() + pos + fieldSize);
             pos += fieldSize;
             fieldSize = 0;
         }
 
-        if (caSignMap.size() != 3)
+        if (caSignMap.size() != 4)
         {
             throw std::runtime_error("bad ca sign"); // create
         }
@@ -240,24 +245,21 @@ MyCryptoLib::CAdES MyCryptoLib::CAdES::fromFile(const std::string &filename)
     fileBuffer.resize(completeSize - headerPos - pemTerminator.size() - pemHeader.size());
     pkcsFile.read(reinterpret_cast<char*>(fileBuffer.data()), fileBuffer.size());
 
-    return MyCryptoLib::CAdES::fromBytes(fileBuffer);
+    return MyCryptoLib::CAdES::parseBuffers(fileBuffer);
 }
 
 
-void MyCryptoLib::CAdES::appendCASign(uint64_t time, const std::vector<uint8_t> &pubKeyHash, const std::vector<uint8_t> &signature)
+void MyCryptoLib::CAdES::appendCASign(uint64_t time, const std::vector<uint8_t> &pubKeyHash, const std::vector<uint8_t> &signedMessageDigest, const std::vector<uint8_t> &signature)
 {
-    this->caSignData[0] = { static_cast<uint8_t>(time << 56 & 0xFF), static_cast<uint8_t>(time << 48 & 0xFF),
-                            static_cast<uint8_t>(time << 40 & 0xFF), static_cast<uint8_t>(time << 32 & 0xFF),
-                            static_cast<uint8_t>(time << 24 & 0xFF), static_cast<uint8_t>(time << 16 & 0xFF),
-                            static_cast<uint8_t>(time << 8  & 0xFF), static_cast<uint8_t>(time << 0  & 0xFF) };
+    this->caSignData[0] = { static_cast<uint8_t>(time >> 56), static_cast<uint8_t>(time >> 48),
+                            static_cast<uint8_t>(time >> 40), static_cast<uint8_t>(time >> 32),
+                            static_cast<uint8_t>(time >> 24), static_cast<uint8_t>(time >> 16),
+                            static_cast<uint8_t>(time >> 8 ), static_cast<uint8_t>(time >> 0 ) };
     this->caSignData[1] = std::vector<uint8_t>(pubKeyHash.begin(), pubKeyHash.end());
-    this->caSignData[2] = std::vector<uint8_t>(signature.begin(), signature.end());
+    this->caSignData[2] = std::vector<uint8_t>(signedMessageDigest.begin(), signedMessageDigest.end());
+    this->caSignData[3] = std::vector<uint8_t>(signature.begin(), signature.end());
 }
 
-void MyCryptoLib::CAdES::setCASignData(const std::map<int, std::vector<uint8_t> > &caSign)
-{
-    this->caSignData = caSign;
-}
 
 bool MyCryptoLib::CAdES::isSignedByCA() const
 {
@@ -336,7 +338,7 @@ std::vector<uint8_t> MyCryptoLib::CAdES::getCAKeyFingerprint() const
     return this->caSignData.at(1);
 }
 
-std::vector<uint8_t> MyCryptoLib::CAdES::getCASignature() const
+std::vector<uint8_t> MyCryptoLib::CAdES::getCASignedMessageDigest() const
 {
     if (!this->isSignedByCA())
     {
@@ -345,8 +347,36 @@ std::vector<uint8_t> MyCryptoLib::CAdES::getCASignature() const
     return this->caSignData.at(2);
 }
 
+std::vector<uint8_t> MyCryptoLib::CAdES::getCASignature() const
+{
+    if (!this->isSignedByCA())
+    {
+        throw std::runtime_error("is not signed");
+    }
+    return this->caSignData.at(3);
+}
 
-std::vector<uint8_t> MyCryptoLib::CAdES::toBytes(bool includeHeaders) const
+size_t MyCryptoLib::CAdES::getUserSignHeaderPos() const
+{
+    return this->userSignHeaderPos;
+}
+
+size_t MyCryptoLib::CAdES::getUserSignTerminatorPos() const
+{
+     return this->userSignTerminatorPos;
+}
+
+size_t MyCryptoLib::CAdES::getCASignHeaderPos() const
+{
+    return this->caSignHeaderPos;
+}
+
+size_t MyCryptoLib::CAdES::getCASignTerminatorPos() const
+{
+    return this->caSignTerminatorPos;
+}
+
+std::vector<uint8_t> MyCryptoLib::CAdES::toBytes() const
 {
     size_t signSize = 0;
     for (const std::pair<int, std::vector<uint8_t>> &pair : this->signData)
@@ -354,19 +384,13 @@ std::vector<uint8_t> MyCryptoLib::CAdES::toBytes(bool includeHeaders) const
         signSize += pair.second.size() + 2;
     }
 
-    std::vector<uint8_t> result(signSize + 6, 0x00);
+    std::vector<uint8_t> result(signSize + CAdES::userSignHeader.size() + CAdES::userSignTerminator.size(), 0x00);
     std::vector<uint8_t> buffer;
     size_t pos = 0;
     size_t bufferSize = 0;
 
-    // My Sign Header
-    result[pos++] = 0x0E;
-    result[pos++] = 0x51;
-    result[pos++] = 0x0E;
-    result[pos++] = 0x51;
-    result[pos++] = signSize >> 8; // 0
-    result[pos++] = signSize; // 1
-
+    std::copy(CAdES::userSignHeader.begin(), CAdES::userSignHeader.end(), result.begin());
+    pos += CAdES::userSignHeader.size();
     for (int i = 0; i < this->signData.size(); i++)
     {
         buffer = this->signData.at(i);
@@ -380,25 +404,19 @@ std::vector<uint8_t> MyCryptoLib::CAdES::toBytes(bool includeHeaders) const
         std::copy(buffer.begin(), buffer.end(), result.begin() + pos);
         pos += bufferSize;
     }
+    std::copy(CAdES::userSignTerminator.begin(), CAdES::userSignTerminator.end(), result.begin() + pos);
+    pos += CAdES::userSignTerminator.size();
 
     if (!this->caSignData.empty())
     {
-        size_t caSignSize = 0;
         for (const std::pair<int, std::vector<uint8_t>> &pair : this->caSignData)
         {
-            caSignSize += pair.second.size() + 2;
+            signSize += pair.second.size() + 2;
         }
 
-        result.resize(signSize + caSignSize + 12);
-
-        // CA Sign Header
-        result[pos++] = 0xCA;
-        result[pos++] = 0x51;
-        result[pos++] = 0xCA;
-        result[pos++] = 0x51;
-        result[pos++] = caSignSize >> 8;
-        result[pos++] = caSignSize;
-
+        result.resize(signSize + CAdES::caSignHeader.size() + CAdES::caSignTerminator.size() + CAdES::userSignHeader.size() + CAdES::userSignTerminator.size(), 0x00);
+        std::copy(CAdES::caSignHeader.begin(), CAdES::caSignHeader.end(), result.begin() + pos);
+        pos += CAdES::caSignHeader.size();
         for (int i = 0; i < this->caSignData.size(); i++)
         {
             buffer = this->caSignData.at(i);
@@ -412,19 +430,8 @@ std::vector<uint8_t> MyCryptoLib::CAdES::toBytes(bool includeHeaders) const
             std::copy(buffer.begin(), buffer.end(), result.begin() + pos);
             pos += bufferSize;
         }
+        std::copy(CAdES::caSignTerminator.begin(), CAdES::caSignTerminator.end(), result.end() - CAdES::caSignTerminator.size());
     }
-
-    if (includeHeaders)
-    {
-        std::vector<uint8_t> wrapped(result.size() + this->pemHeader.size() + this->pemTerminator.size(), 0x00);
-
-        std::copy(this->pemHeader.begin(), this->pemHeader.end(), wrapped.begin());
-        std::copy(result.begin(), result.end(), wrapped.begin() + this->pemHeader.size());
-        std::copy(this->pemTerminator.begin(), this->pemTerminator.end(), wrapped.begin() + this->pemHeader.size() + result.size());
-
-        result = wrapped;
-    }
-
 
     return result;
 }
@@ -433,22 +440,22 @@ std::vector<uint8_t> MyCryptoLib::CAdES::toBytes(bool includeHeaders) const
 std::vector<uint8_t> MyCryptoLib::CAdES::toPem() const
 {
     std::stringstream ss;
-    std::string b64string = Base64::b64Encode(this->toBytes(false));
+    std::string b64string = Base64::b64Encode(this->toBytes());
 
-    ss << pemHeader << '\n';
+//    ss << pemHeader << '\n';
 
-    // wrap
-    for (int i = 0; i < b64string.size(); i++)
-    {
-        if (i % 80 == 0 && i != 0)
-        {
-            ss << '\n';
-        }
-        ss << b64string[i];
-    }
-    ss << '\n' << pemTerminator << '\n';
+//    // wrap
+//    for (int i = 0; i < b64string.size(); i++)
+//    {
+//        if (i % 80 == 0 && i != 0)
+//        {
+//            ss << '\n';
+//        }
+//        ss << b64string[i];
+//    }
+//    ss << '\n' << pemTerminator << '\n';
 
-    b64string = ss.str();
+//    b64string = ss.str();
 
     return std::vector<uint8_t>(b64string.begin(), b64string.end());
 }

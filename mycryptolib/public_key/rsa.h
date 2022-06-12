@@ -29,10 +29,10 @@ public:
     CAdES sign(const std::string &username, const std::vector<uint8_t> &pubKeyHash, const std::string &data, MyCryptoLib::HashBase *hash, const RSAKey &key);
     CAdES sign(const std::string &username, const std::vector<uint8_t> &pubKeyHash, const std::string &contentType, const std::vector<uint8_t> &data, MyCryptoLib::HashBase *hash, const RSAKey &key);
     CAdES sign(const std::string &username, const std::vector<uint8_t> &pubKeyHash, const std::string &contentType, const std::string &filename, MyCryptoLib::HashBase *hash, const RSAKey &key);
-    void signCA(MyCryptoLib::CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &data, const RSAKey &key);
+    void signCA(MyCryptoLib::CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &signedMessage, const RSAKey &key);
 
-    bool checkSign(const std::vector<uint8_t> &data, const MyCryptoLib::CAdES &cades, const RSAKey &key);
-    bool checkCASign(const std::vector<uint8_t> &data, const MyCryptoLib::CAdES &cades, const RSAKey &caPubKey);
+    bool checkSign(const std::vector<uint8_t> &userSignedMessage, const MyCryptoLib::CAdES &cades, const RSAKey &userPubKey);
+    bool checkCASign(const std::vector<uint8_t> &caSignedMessage, const MyCryptoLib::CAdES &cades, const RSAKey &caPubKey);
 private:
     void crypt(std::vector<uint8_t> &data, const NTL::ZZ &power, const NTL::ZZ &n);
     void pad(std::vector<uint8_t> &data, size_t blockSize);

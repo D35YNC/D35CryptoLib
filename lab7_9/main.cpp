@@ -175,7 +175,7 @@ void workServer()
     MyCryptoLib::SHA512 sha;
     MyCryptoLib::RSA rsa;
     MyCryptoLib::RSAKey rsaPubKey = MyCryptoLib::RSAKey::fromPKCS8File("rsa.pub"); // client
-    MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::fromFileBytes(buffer);
+    MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::fromBytes(buffer);
     std::cout << "RSA SIGN INFO" << std::endl << cades << std::endl;
     if (rsa.checkSign(buffer, cades, rsaPubKey))
     {
@@ -192,7 +192,7 @@ void workServer()
     sha.update(rsaPubKey.exportPublicKeyBytes());
     rsa.signCA(cades, sha.digest(), buffer, rsaKey);
 
-    buffer = cades.toBytes(false);
+    buffer = cades.toBytes();
 
     sendall(clientSocket, buffer);
     std::cout << std::endl << std::endl;
@@ -203,7 +203,7 @@ void workServer()
 
     MyCryptoLib::ElGamal elGamal;
     MyCryptoLib::ElGamalKey egPubKey = MyCryptoLib::ElGamalKey::fromPKCS8File("elgamal.pub");
-    cades = MyCryptoLib::CAdES::fromFileBytes(buffer);
+    cades = MyCryptoLib::CAdES::fromBytes(buffer);
     std::cout << "ELGAMAL SIGN INFO" << std::endl << cades << std::endl;
     if (elGamal.checkSign(buffer, cades, egPubKey))
     {
@@ -220,7 +220,7 @@ void workServer()
     sha.update(egPubKey.exportPublicKeyBytes());
     elGamal.signCA(cades, sha.digest(), buffer, egPrivKey);
 
-    buffer = cades.toBytes(false);
+    buffer = cades.toBytes();
 
     sendall(clientSocket, buffer);
     std::cout << std::endl << std::endl;
@@ -231,7 +231,7 @@ void workServer()
 
     MyCryptoLib::FiatShamir fs;
     MyCryptoLib::FiatShamirKey fsPubKey = MyCryptoLib::FiatShamirKey::fromPKCS8File("fs.pub");
-    cades = MyCryptoLib::CAdES::fromFileBytes(buffer);
+    cades = MyCryptoLib::CAdES::fromBytes(buffer);
     std::cout << "FIAT-SHAMIR SIGN INFO" << std::endl << cades << std::endl;
     if (fs.checkSign(buffer, cades, fsPubKey))
     {
@@ -248,7 +248,7 @@ void workServer()
     sha.update(fsPubKey.exportPublicKeyBytes());
     fs.signCA(cades, sha.digest(), buffer, fsPrivKey);
 
-    buffer = cades.toBytes(false);
+    buffer = cades.toBytes();
 
     sendall(clientSocket, buffer);
 
@@ -283,7 +283,6 @@ void workClient()
         return;
     }
 
-
     size_t fileSize = 0;
     std::ifstream infile;
     std::vector<uint8_t> buffer;
@@ -311,18 +310,18 @@ void workClient()
 
     sendall(sockfd, completeBuffer);
     recvall(sockfd, buffer);
-    completeBuffer.resize(fileSize);
-
-    rsaCAdES = MyCryptoLib::CAdES::fromBytes(buffer);
 
     std::cout << std::endl << "RECEIVED SIGN FROM CA" << std::endl;
+    completeBuffer.resize(buffer.size() + fileSize);
+    std::copy(buffer.begin(), buffer.end(), completeBuffer.begin() + fileSize);
+    rsaCAdES = MyCryptoLib::CAdES::fromBytes(completeBuffer);
     if (rsa.checkSign(completeBuffer, rsaCAdES, rsaPubKey))
     {
-        std::cout << "MY SIGN CORRECT" << std::endl;
+        std::cout << "MY RSA SIGN CORRECT" << std::endl;
     }
     else
     {
-        std::cerr << "MY SIGN INCORRECT" << std::endl;
+        std::cerr << "MY RSA SIGN INCORRECT" << std::endl;
     }
 
     MyCryptoLib::RSAKey caRsaPubKey = MyCryptoLib::RSAKey::fromPKCS8File("CA.rsa.pub");
@@ -355,17 +354,18 @@ void workClient()
 
     sendall(sockfd, completeBuffer);
     recvall(sockfd, buffer);
-    completeBuffer.resize(fileSize);
 
-    egCAdES = MyCryptoLib::CAdES::fromBytes(buffer);
-
+    std::cout << std::endl << "RECEIVED SIGN FROM CA" << std::endl;
+    completeBuffer.resize(buffer.size() + egMessage.size());
+    std::copy(buffer.begin(), buffer.end(), completeBuffer.begin() + egMessage.size());
+    egCAdES = MyCryptoLib::CAdES::fromBytes(completeBuffer);
     if (elGamal.checkSign(completeBuffer, egCAdES, egPubKey))
     {
-        std::cout << "MY SIGN CORRECT" << std::endl;
+        std::cout << "MY ELGAMAL SIGN CORRECT" << std::endl;
     }
     else
     {
-        std::cerr << "MY SIGN INCORRECT" << std::endl;
+        std::cerr << "MY ELGAMAL SIGN INCORRECT" << std::endl;
     }
 
     MyCryptoLib::ElGamalKey caEgPubKey = MyCryptoLib::ElGamalKey::fromPKCS8File("CA.elgamal.pub");
@@ -380,7 +380,7 @@ void workClient()
 
     std::cout << std::endl << std::endl;
 
-    //########################################
+//    //########################################
 
     MyCryptoLib::FiatShamir fs;
     MyCryptoLib::FiatShamirKey fsPrivKey = MyCryptoLib::FiatShamirKey::fromPKCS12File("fs");
@@ -403,27 +403,28 @@ void workClient()
 
     sendall(sockfd, completeBuffer);
     recvall(sockfd, buffer);
-    completeBuffer.resize(fileSize);
 
-    fsCAdES = MyCryptoLib::CAdES::fromBytes(buffer);
-
+    std::cout << std::endl << "RECEIVED SIGN FROM CA" << std::endl;
+    completeBuffer.resize(buffer.size() + fileSize);
+    std::copy(buffer.begin(), buffer.end(), completeBuffer.begin() + fileSize);
+    fsCAdES = MyCryptoLib::CAdES::fromBytes(completeBuffer);
     if (fs.checkSign(completeBuffer, fsCAdES, fsPubKey))
     {
-        std::cout << "MY SIGN CORRECT" << std::endl;
+        std::cout << "MY FIAT-SHAMIR SIGN CORRECT" << std::endl;
     }
     else
     {
-        std::cerr << "MY SIGN INCORRECT" << std::endl;
+        std::cerr << "MY FIAT-SHAMIR SIGN INCORRECT" << std::endl;
     }
 
     MyCryptoLib::FiatShamirKey caFsPubKey = MyCryptoLib::FiatShamirKey::fromPKCS8File("CA.fs.pub");
     if (fs.checkCASign(completeBuffer, fsCAdES, caFsPubKey))
     {
-        std::cout << "CA ELGAMAL SIGN CORRECT" << std::endl << "CA ELGAMAL SIGN INFO" << std::endl << fsCAdES << std::endl;
+        std::cout << "CA FIAT-SHAMIR SIGN CORRECT" << std::endl << "CA FIAT-SHAMIR SIGN INFO" << std::endl << fsCAdES << std::endl;
     }
     else
     {
-        std::cout << "CA ELGAMAL SIGN INCORRECT" << std::endl << "CA ELGAMAL SIGN INFO" << std::endl << fsCAdES << std::endl;
+        std::cout << "CA FIAT-SHAMIR SIGN INCORRECT" << std::endl << "CA FIAT-SHAMIR SIGN INFO" << std::endl << fsCAdES << std::endl;
     }
 
     close(sockfd);

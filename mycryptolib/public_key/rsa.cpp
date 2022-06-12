@@ -104,7 +104,7 @@ MyCryptoLib::CAdES MyCryptoLib::RSA::sign(
         const RSAKey &key)
 {
     std::ifstream signingFile(filename);
-    hash->update(signingFile, -1);
+    hash->update(signingFile);
     std::vector<uint8_t> originalHash = hash->digest();
     std::vector<uint8_t> signature = hash->digest();
 
@@ -112,21 +112,39 @@ MyCryptoLib::CAdES MyCryptoLib::RSA::sign(
     return CAdES::create(1, contentType, username, pubKeyHash, hash->name(), "RSAdsi", originalHash, signature);
 }
 
-void MyCryptoLib::RSA::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &data, const RSAKey &key)
+void MyCryptoLib::RSA::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &signedMessage, const RSAKey &key)
 {
-    HashBase *hash = MyCryptoLib::hashIdToHashPtr(userCAdES.getHashAlgorithmId());
+    // gEt timestamp
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
 
-    hash->update(data);
+    // prepare data with timestamp
+    std::vector<uint8_t> dataForSigning(signedMessage.begin(), signedMessage.end());
+    size_t datasize = dataForSigning.size();
+    dataForSigning.resize(datasize + 8);
+    dataForSigning[datasize    ] = static_cast<uint8_t>(timestamp >> 56);
+    dataForSigning[datasize + 1] = static_cast<uint8_t>(timestamp >> 48);
+    dataForSigning[datasize + 2] = static_cast<uint8_t>(timestamp >> 40);
+    dataForSigning[datasize + 3] = static_cast<uint8_t>(timestamp >> 32);
+    dataForSigning[datasize + 4] = static_cast<uint8_t>(timestamp >> 24);
+    dataForSigning[datasize + 5] = static_cast<uint8_t>(timestamp >> 16);
+    dataForSigning[datasize + 6] = static_cast<uint8_t>(timestamp >> 8 );
+    dataForSigning[datasize + 7] = static_cast<uint8_t>(timestamp >> 0 );
+
+    HashBase *hash = MyCryptoLib::hashIdToHashPtr(userCAdES.getHashAlgorithmId());
+    hash->update(dataForSigning);
     std::vector<uint8_t> signature = hash->digest();
+    hash->update(signedMessage);
+    std::vector<uint8_t> signedMessageDigest = hash->digest();
     delete hash;
 
     crypt(signature, key.getPrivateExponent(), key.getModulus());
 
-    userCAdES.appendCASign(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(), caPubKeyHash, signature);
+    userCAdES.appendCASign(timestamp, caPubKeyHash, signedMessageDigest, signature);
 }
 
 
-bool MyCryptoLib::RSA::checkSign(const std::vector<uint8_t> &data, const MyCryptoLib::CAdES &cades, const RSAKey &key)
+bool MyCryptoLib::RSA::checkSign(const std::vector<uint8_t> &userSignedMessage, const MyCryptoLib::CAdES &cades, const RSAKey &key)
 {
     std::vector<uint8_t> digest = cades.getContentHash();
     std::vector<uint8_t> signature = cades.getSignature();
@@ -135,27 +153,46 @@ bool MyCryptoLib::RSA::checkSign(const std::vector<uint8_t> &data, const MyCrypt
     signature.resize(digest.size());
 
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
-    hash->update(data);
+    hash->update(std::vector<uint8_t>(userSignedMessage.begin(), userSignedMessage.begin() + cades.getUserSignHeaderPos()));
     std::vector<uint8_t> actualDigest = hash->digest();
     delete hash;
 
     return digest == actualDigest && digest == signature;
 }
 
-bool MyCryptoLib::RSA::checkCASign(const std::vector<uint8_t> &data, const CAdES &cades, const RSAKey &caPubKey)
+bool MyCryptoLib::RSA::checkCASign(const std::vector<uint8_t> &signedMessage, const CAdES &cades, const RSAKey &caPubKey)
 {
-    std::vector<uint8_t> digest = cades.getContentHash();
+    std::vector<uint8_t> signedMessageDigest = cades.getCASignedMessageDigest();
     std::vector<uint8_t> signature = cades.getCASignature();
+    uint64_t timestamp = cades.getCATimestamp();
 
     this->crypt(signature, caPubKey.getPublicExponent(), caPubKey.getModulus());
-    signature.resize(digest.size());
+    signature.resize(signedMessageDigest.size());
 
+    std::vector<uint8_t> data(signedMessage.begin(), signedMessage.begin() + cades.getCASignHeaderPos());
+    size_t dataSize = data.size();
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
+    hash->update(data);
+    if (hash->digest() != cades.getCASignedMessageDigest())
+    {
+        return false; // corrupted message/sign/ca sign
+    }
+
+    data.resize(dataSize + 8);
+    data[dataSize    ] = static_cast<uint8_t>(timestamp >> 56);
+    data[dataSize + 1] = static_cast<uint8_t>(timestamp >> 48);
+    data[dataSize + 2] = static_cast<uint8_t>(timestamp >> 40);
+    data[dataSize + 3] = static_cast<uint8_t>(timestamp >> 32);
+    data[dataSize + 4] = static_cast<uint8_t>(timestamp >> 24);
+    data[dataSize + 5] = static_cast<uint8_t>(timestamp >> 16);
+    data[dataSize + 6] = static_cast<uint8_t>(timestamp >> 8 );
+    data[dataSize + 7] = static_cast<uint8_t>(timestamp >> 0 );
+
     hash->update(data);
     std::vector<uint8_t> actualDigest = hash->digest();
     delete hash;
 
-    return digest == actualDigest && digest == signature;
+    return actualDigest  == signature;
 }
 
 

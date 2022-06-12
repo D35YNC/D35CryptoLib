@@ -61,7 +61,7 @@ MyCryptoLib::CAdES MyCryptoLib::ElGamal::sign(
         const ElGamalKey &privKey)
 {
     std::ifstream signingFile(filename);
-    hash->update(signingFile, -1);
+    hash->update(signingFile);
 
     std::vector<uint8_t> originalHash = hash->digest();
     std::vector<uint8_t> signature = hash->digest();
@@ -71,16 +71,33 @@ MyCryptoLib::CAdES MyCryptoLib::ElGamal::sign(
     return CAdES::create(1, contentType, username, pubKeyHash, hash->name(), "DSAdsi", originalHash, signature);
 }
 
-void MyCryptoLib::ElGamal::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &data, const ElGamalKey &caPrivKey)
+void MyCryptoLib::ElGamal::signCA(CAdES &userCAdES, const std::vector<uint8_t> &caPubKeyHash, const std::vector<uint8_t> &signedMessage, const ElGamalKey &caPrivKey)
 {
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+    std::vector<uint8_t> data(signedMessage.begin(), signedMessage.end());
+    data.resize(data.size() + 8);
+    data[signedMessage.size()] = timestamp >> 56;
+    data[signedMessage.size() + 1] = timestamp >> 48;
+    data[signedMessage.size() + 2] = timestamp >> 40;
+    data[signedMessage.size() + 3] = timestamp >> 32;
+    data[signedMessage.size() + 4] = timestamp >> 24;
+    data[signedMessage.size() + 5] = timestamp >> 16;
+    data[signedMessage.size() + 6] = timestamp >> 8;
+    data[signedMessage.size() + 7] = timestamp;
+
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(userCAdES.getHashAlgorithmId());
+    hash->update(data);
     std::vector<uint8_t> signature = hash->digest();
+    hash->update(signedMessage);
+    std::vector<uint8_t> signedMessageDigest = hash->digest();
+    delete hash;
     sign(signature, caPrivKey.getA(), caPrivKey.getAlpha(), caPrivKey.getP());
 
-    userCAdES.appendCASign(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(), caPubKeyHash, signature);
+    userCAdES.appendCASign(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(), caPubKeyHash, signedMessageDigest, signature);
 }
 
-bool MyCryptoLib::ElGamal::checkSign(const std::vector<uint8_t> &data, const CAdES &cades, const ElGamalKey &key)
+bool MyCryptoLib::ElGamal::checkSign(const std::vector<uint8_t> &userSignedMessage, const CAdES &cades, const ElGamalKey &key)
 {
     std::vector<uint8_t> digest = cades.getContentHash();
     NTL::ZZ digestInt = NTL::ZZFromBytes(digest.data(), digest.size());
@@ -95,7 +112,7 @@ bool MyCryptoLib::ElGamal::checkSign(const std::vector<uint8_t> &data, const CAd
     NTL::ZZ stage3 = NTL::PowerMod(key.getAlpha(), digestInt, key.getP());
 
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
-    hash->update(data);
+    hash->update(std::vector<uint8_t>(userSignedMessage.begin(), userSignedMessage.begin() + cades.getUserSignHeaderPos()));
     std::vector<uint8_t> actualDigest = hash->digest();
     delete hash;
 
@@ -105,11 +122,11 @@ bool MyCryptoLib::ElGamal::checkSign(const std::vector<uint8_t> &data, const CAd
     return stage2 == stage3 && stage2 == actualDigestInt;
 }
 
-bool MyCryptoLib::ElGamal::checkCASign(const std::vector<uint8_t> &data, const CAdES &cades, const ElGamalKey &caPubKey)
+bool MyCryptoLib::ElGamal::checkCASign(const std::vector<uint8_t> &signedMessage, const CAdES &cades, const ElGamalKey &caPubKey)
 {
-    std::vector<uint8_t> digest = cades.getContentHash();
+    std::vector<uint8_t> signedMessageDigest = cades.getCASignedMessageDigest();
     std::vector<uint8_t> signature = cades.getCASignature();
-    NTL::ZZ digestInt = NTL::ZZFromBytes(digest.data(), digest.size());
+    NTL::ZZ digestInt = NTL::ZZFromBytes(signedMessageDigest.data(), signedMessageDigest.size());
 
     NTL::ZZ gamma = NTL::ZZFromBytes(&signature.data()[0], static_cast<long>(signature.size() / 2));
     NTL::ZZ delta = NTL::ZZFromBytes(&signature.data()[static_cast<long>(signature.size() / 2)], static_cast<long>(signature.size() / 2));
@@ -119,15 +136,30 @@ bool MyCryptoLib::ElGamal::checkCASign(const std::vector<uint8_t> &data, const C
     NTL::ZZ stage2 = NTL::MulMod(stage0, stage1, caPubKey.getP());
     NTL::ZZ stage3 = NTL::PowerMod(caPubKey.getAlpha(), digestInt, caPubKey.getP());
 
+    uint64_t timestamp = cades.getCATimestamp();
+    std::vector<uint8_t> data(signedMessage.begin(), signedMessage.begin() + cades.getCASignHeaderPos());
+    size_t dataSize = data.size();
+    data.resize(dataSize + 8);
+    data[dataSize] = timestamp >> 56;
+    data[dataSize + 1] = timestamp >> 48;
+    data[dataSize + 2] = timestamp >> 40;
+    data[dataSize + 3] = timestamp >> 32;
+    data[dataSize + 4] = timestamp >> 24;
+    data[dataSize + 5] = timestamp >> 16;
+    data[dataSize + 6] = timestamp >> 8;
+    data[dataSize + 7] = timestamp;
+
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
     hash->update(data);
     std::vector<uint8_t> actualDigest = hash->digest();
     delete hash;
 
+    NTL::ZZ signedDigestInt = NTL::ZZFromBytes(signedMessageDigest.data(), signedMessageDigest.size());
     NTL::ZZ actualDigestInt = NTL::ZZFromBytes(actualDigest.data(), actualDigest.size());
     actualDigestInt = NTL::PowerMod(caPubKey.getAlpha(), actualDigestInt, caPubKey.getP());
-
-    return stage2 == stage3 && stage2 == actualDigestInt;
+    /// correct
+//    return stage2 == stage3 && stage2 == actualDigestInt;
+    return stage2 == signedDigestInt && stage2 == actualDigestInt;
 }
 
 void MyCryptoLib::ElGamal::sign(std::vector<uint8_t> &signature, NTL::ZZ a, NTL::ZZ alpha, NTL::ZZ p)
