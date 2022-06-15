@@ -5,6 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 namespace MyCryptoLib
 {
@@ -12,7 +13,7 @@ class HashBase
 {
 public:
     HashBase(int digestSize, std::string name) :
-        _digest(digestSize),
+        _digest(digestSize, 0x00),
         _name(name)
     { }
     virtual ~HashBase() = default;

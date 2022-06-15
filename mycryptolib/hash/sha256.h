@@ -1,8 +1,6 @@
 #ifndef SHA256_H
 #define SHA256_H
 
-//#include <algorithm>
-
 #include "hash_base.h"
 
 namespace MyCryptoLib

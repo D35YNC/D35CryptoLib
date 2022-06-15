@@ -152,12 +152,15 @@ bool MyCryptoLib::RSA::checkSign(const std::vector<uint8_t> &userSignedMessage, 
     this->crypt(signature, key.getPublicExponent(), key.getModulus());
     signature.resize(digest.size());
 
-    HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
-    hash->update(std::vector<uint8_t>(userSignedMessage.begin(), userSignedMessage.begin() + cades.getUserSignHeaderPos()));
-    std::vector<uint8_t> actualDigest = hash->digest();
-    delete hash;
-
-    return digest == actualDigest && digest == signature;
+    if (!userSignedMessage.empty())
+    {
+        HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
+        hash->update(std::vector<uint8_t>(userSignedMessage.begin(), userSignedMessage.begin() + cades.getUserSignHeaderPos()));
+        std::vector<uint8_t> actualDigest = hash->digest();
+        delete hash;
+        return digest == actualDigest && digest == signature;
+    }
+    return digest == signature;
 }
 
 bool MyCryptoLib::RSA::checkCASign(const std::vector<uint8_t> &signedMessage, const CAdES &cades, const RSAKey &caPubKey)

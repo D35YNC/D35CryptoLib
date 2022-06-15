@@ -93,17 +93,11 @@ MyCryptoLib::CAdES MyCryptoLib::CAdES::fromBytes(const std::vector<uint8_t> &buf
         throw MyCryptoLib::BadPKCSFileStructureException("Confusing pkcs structure, cant read");
     }
 
-    std::vector<uint8_t> caSignBuffer;
+    std::vector<uint8_t> caSignBuffer = {};
     std::vector<uint8_t> userSignBuffer(buffer.begin() + userSignHeaderPos + CAdES::userSignHeader.size(), buffer.begin() + userSignTerminatorPos);
-    if (caSignHeaderPos != caSignTerminatorPos && caSignHeaderPos != std::string::npos && caSignTerminatorPos != std::string::npos)
+    if (caSignHeaderPos != std::string::npos && caSignTerminatorPos != std::string::npos && caSignHeaderPos < caSignTerminatorPos)
     {
         caSignBuffer = std::vector<uint8_t>(buffer.begin() + caSignHeaderPos + CAdES::caSignHeader.size(), buffer.begin() + caSignTerminatorPos);
-        MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::parseBuffers(userSignBuffer, caSignBuffer);
-        cades.userSignHeaderPos = userSignHeaderPos;
-        cades.userSignTerminatorPos = userSignTerminatorPos;
-        cades.caSignHeaderPos = caSignHeaderPos;
-        cades.caSignTerminatorPos = caSignTerminatorPos;
-        return cades;
     }
     MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::parseBuffers(userSignBuffer);
     cades.userSignHeaderPos = userSignHeaderPos;
