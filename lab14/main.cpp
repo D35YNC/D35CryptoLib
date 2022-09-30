@@ -181,20 +181,27 @@ void user_1()
     // Server Side
     //
 
-    std::vector<std::vector<uint8_t>> digests = precalc_hashes();
+    std::vector<uint8_t> lastDigest;
+    recvall(opSocket, lastDigest);
 
-    std::vector<uint8_t> buffer;
+    std::vector<uint8_t> authBuffer;
+    recvall(opSocket, authBuffer);
 
-    recvall(opSocket, buffer);
-
-    std::vector<uint8_t> opId(buffer.begin(), buffer.begin() + 32);
-    std::vector<uint8_t> opI(buffer.begin() + 32, buffer.begin() + 36);
-    std::vector<uint8_t> opAuth(buffer.begin() + 36, buffer.end());
+    std::vector<uint8_t> opId(authBuffer.begin(), authBuffer.begin() + 32);
+    std::vector<uint8_t> opI(authBuffer.begin() + 32, authBuffer.begin() + 36);
+    std::vector<uint8_t> opAuth(authBuffer.begin() + 36, authBuffer.end());
 
     uint32_t i = static_cast<uint32_t>(opI[0] << 24) |
                  static_cast<uint32_t>(opI[1] << 16) |
                  static_cast<uint32_t>(opI[2] << 8 ) |
                  static_cast<uint32_t>(opI[3] << 0 );
+
+    MyCryptoLib::SHA512 sha;
+    for (int j = N - i + 1; j < N; j++)
+    {
+        sha.update(opAuth);
+        opAuth = sha.digest();
+    }
 
     bool insideAuthorized = false;
     for (const std::pair<std::string, std::vector<uint8_t>> &user : AUTHORIZED_USERS)
@@ -208,51 +215,51 @@ void user_1()
     if (!insideAuthorized)
     {
         std::cerr << "USER NOT IN AUTHORIZED USERS" << std::endl;
-        buffer.resize(4);
-        buffer[0] = 'B';
-        buffer[1] = 'A';
-        buffer[2] = 'D';
-        buffer[3] = 'I';
-        buffer[4] = 'D';
-        sendall(opSocket, buffer);
+        authBuffer.resize(4);
+        authBuffer[0] = 'B';
+        authBuffer[1] = 'A';
+        authBuffer[2] = 'D';
+        authBuffer[3] = 'I';
+        authBuffer[4] = 'D';
+        sendall(opSocket, authBuffer);
         close(opSocket);
         return;
     }
-    if (opAuth != digests[N - i])
+    if (opAuth != /*digests[N - i]*/lastDigest)
     {
         std::cerr << "USER AUTH DATA INVALID" << std::endl;
-        buffer.resize(11);
-        buffer[0] = 'B';
-        buffer[1] = 'A';
-        buffer[2] = 'D';
-        buffer[3] = 'A';
-        buffer[4] = 'U';
-        buffer[5] = 'T';
-        buffer[6] = 'H';
-        buffer[7] = 'D';
-        buffer[8] = 'A';
-        buffer[9] = 'T';
-        buffer[10] = 'A';
-        sendall(opSocket, buffer);
+        authBuffer.resize(11);
+        authBuffer[0] = 'B';
+        authBuffer[1] = 'A';
+        authBuffer[2] = 'D';
+        authBuffer[3] = 'A';
+        authBuffer[4] = 'U';
+        authBuffer[5] = 'T';
+        authBuffer[6] = 'H';
+        authBuffer[7] = 'D';
+        authBuffer[8] = 'A';
+        authBuffer[9] = 'T';
+        authBuffer[10] = 'A';
+        sendall(opSocket, authBuffer);
         sleep(1);
         close(opSocket);
         return;
     }
 
     std::cout << "AUTH SUCC" << std::endl;
-    buffer.resize(9);
+    authBuffer.resize(9);
 
-    buffer[0] = 'A';
-    buffer[1] = 'U';
-    buffer[2] = 'T';
-    buffer[3] = 'O';
-    buffer[4] = 'R';
-    buffer[5] = 'I';
-    buffer[6] = 'Z';
-    buffer[7] = 'E';
-    buffer[8] = 'D';
+    authBuffer[0] = 'A';
+    authBuffer[1] = 'U';
+    authBuffer[2] = 'T';
+    authBuffer[3] = 'O';
+    authBuffer[4] = 'R';
+    authBuffer[5] = 'I';
+    authBuffer[6] = 'Z';
+    authBuffer[7] = 'E';
+    authBuffer[8] = 'D';
 
-    sendall(opSocket, buffer);
+    sendall(opSocket, authBuffer);
 
     //#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
@@ -286,6 +293,7 @@ void user_2()
 
     std::vector<std::vector<uint8_t>> digests = precalc_hashes();
 
+    sendall(sockfd, digests[N - 1]);
 
     std::vector<uint8_t> myId(USER_2_ID.begin(), USER_2_ID.end());
     std::vector<uint8_t> myI = {0x00, 0x00, 0x00, 0x1A}; // 26

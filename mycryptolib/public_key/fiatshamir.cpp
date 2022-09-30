@@ -98,7 +98,7 @@ void MyCryptoLib::FiatShamir::signCA(CAdES &userCAdES, const std::vector<uint8_t
 bool MyCryptoLib::FiatShamir::checkSign(const std::vector<uint8_t> &userSignedMessage, const CAdES &cades, const FiatShamirKey &key)
 {
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
-    std::vector<uint8_t> cadesSign = cades.getSignature();
+    std::vector<uint8_t> cadesSign = cades.getSignature(); // extract st
     std::vector<uint8_t> s(cadesSign.begin(), cadesSign.begin() + hash->digestSize());
     std::vector<uint8_t> t(cadesSign.begin() + hash->digestSize(), cadesSign.end());
 
@@ -179,8 +179,8 @@ bool MyCryptoLib::FiatShamir::checkCASign(const std::vector<uint8_t> &caSignedMe
 
 void MyCryptoLib::FiatShamir::sign(std::vector<uint8_t> &signature, const std::vector<uint8_t> &data, const NTL::ZZ &n, const std::vector<NTL::ZZ> &a, HashBase *hash)
 {
-    NTL::ZZ r = NTL::RandomBnd(n - 1) + 1;
-    NTL::ZZ u = NTL::PowerMod(r, 2, n);
+    NTL::ZZ r = NTL::RandomBnd(n - 1) + 1; // random r
+    NTL::ZZ u = NTL::PowerMod(r, 2, n);    // u = r^2 mod n
 
     std::vector<uint8_t> uBytes(NTL::NumBytes(u));
     NTL::BytesFromZZ(uBytes.data(), u, uBytes.size());
@@ -188,10 +188,10 @@ void MyCryptoLib::FiatShamir::sign(std::vector<uint8_t> &signature, const std::v
     std::vector<uint8_t> datarw(data.begin(), data.end());
     datarw.resize(datarw.size() + uBytes.size());
     std::copy(uBytes.begin(), uBytes.end(), datarw.begin() + data.size());
-    hash->update(datarw);
+    hash->update(datarw);       // h(m, u)
     signature = hash->digest();
 
-    NTL::ZZ t = r;
+    NTL::ZZ t = r; // t = r MUL(i=1,m) a[i] ^ s[i] mod n
     int a_i = 0;
     for (int i = 0; i < signature.size(); i++)
     {

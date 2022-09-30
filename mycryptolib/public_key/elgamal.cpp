@@ -34,16 +34,16 @@ MyCryptoLib::CAdES MyCryptoLib::ElGamal::sign(
     NTL::ZZ gcdB;
     while (true)
     {
-        r = NTL::RandomBnd(key.getP() - 2);
-        NTL::XGCD(gcdResult, gcdA, gcdB, r, key.getP() - 1);
+        r = NTL::RandomBnd(key.getP() - 2); // R - рандом
+        NTL::XGCD(gcdResult, gcdA, gcdB, r, key.getP() - 1); // GCD(R, P - 1) == 1
         if (gcdResult == NTL::conv<NTL::ZZ>(1))
         {
             break;
         }
     }
 
-    gamma = NTL::PowerMod(key.getAlpha(), r, key.getP());
-    delta = ((signatureInt - (key.getA() * gamma)) * gcdA) % (key.getP() - 1);
+    gamma = NTL::PowerMod(key.getAlpha(), r, key.getP()); // gamma = alpha^r mod p
+    delta = ((signatureInt - (key.getA() * gamma)) * gcdA) % (key.getP() - 1); // delta sheeeeesh
 
     signature.resize(NTL::NumBytes(gamma) + NTL::NumBytes(delta));
     NTL::BytesFromZZ(&signature.data()[0], gamma, NTL::NumBytes(gamma));
@@ -105,15 +105,16 @@ bool MyCryptoLib::ElGamal::checkSign(const std::vector<uint8_t> &userSignedMessa
     std::vector<uint8_t> digest = cades.getContentHash();
     NTL::ZZ digestInt = NTL::ZZFromBytes(digest.data(), digest.size());
 
+    // extract gammadelta
     std::vector<uint8_t> signature = cades.getSignature();
     NTL::ZZ gamma = NTL::ZZFromBytes(&signature.data()[0], static_cast<long>(signature.size() / 2));
     NTL::ZZ delta = NTL::ZZFromBytes(&signature.data()[static_cast<long>(signature.size() / 2)], static_cast<long>(signature.size() / 2));
 
-    NTL::ZZ stage0 = NTL::PowerMod(key.getBeta(), gamma, key.getP());
-    NTL::ZZ stage1 = NTL::PowerMod(gamma, delta, key.getP());
-    NTL::ZZ stage2 = NTL::MulMod(stage0, stage1, key.getP());
-    NTL::ZZ stage3 = NTL::PowerMod(key.getAlpha(), digestInt, key.getP());
-
+    NTL::ZZ stage0 = NTL::PowerMod(key.getBeta(), gamma, key.getP()); // beta^gamma mod p
+    NTL::ZZ stage1 = NTL::PowerMod(gamma, delta, key.getP());         // gamma^delta modp
+    NTL::ZZ stage2 = NTL::MulMod(stage0, stage1, key.getP());         // beta^gamma * gamma^delta modp
+    NTL::ZZ stage3 = NTL::PowerMod(key.getAlpha(), digestInt, key.getP()); // alpha ^ hash(data) mod p
+                                                                        // if stg2 == stg3 => SUCC
     HashBase *hash = MyCryptoLib::hashIdToHashPtr(cades.getHashAlgorithmId());
     hash->update(std::vector<uint8_t>(userSignedMessage.begin(), userSignedMessage.begin() + cades.getUserSignHeaderPos()));
     std::vector<uint8_t> actualDigest = hash->digest();

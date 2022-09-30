@@ -21,6 +21,10 @@ public:
         {
             throw std::invalid_argument("Key shoudlldld be not empty pls");
         }
+        if (bytes.size() > 256)
+        {
+            bytes.resize(256);
+        }
     }
 
     Key(const std::initializer_list<uint8_t> &keyBytes): bytes(keyBytes)
@@ -28,6 +32,10 @@ public:
         if (keyBytes.size() == 0)
         {
             throw std::invalid_argument("Key shoudlldld be not empty pls");
+        }
+        if (bytes.size() > 256)
+        {
+            bytes.resize(256);
         }
     }
 

@@ -99,7 +99,7 @@ MyCryptoLib::CAdES MyCryptoLib::CAdES::fromBytes(const std::vector<uint8_t> &buf
     {
         caSignBuffer = std::vector<uint8_t>(buffer.begin() + caSignHeaderPos + CAdES::caSignHeader.size(), buffer.begin() + caSignTerminatorPos);
     }
-    MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::parseBuffers(userSignBuffer);
+    MyCryptoLib::CAdES cades = MyCryptoLib::CAdES::parseBuffers(userSignBuffer, caSignBuffer);
     cades.userSignHeaderPos = userSignHeaderPos;
     cades.userSignTerminatorPos = userSignTerminatorPos;
     cades.caSignHeaderPos = caSignHeaderPos;

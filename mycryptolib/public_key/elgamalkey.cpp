@@ -15,12 +15,12 @@ MyCryptoLib::ElGamalKey MyCryptoLib::ElGamalKey::generate(size_t bitSize)
     NTL::ZZ p;
     NTL::ZZ alpha;
     NTL::ZZ beta;
-    NTL::ZZ phi; // a
+    NTL::ZZ a;
 
-    p = NTL::GenPrime_ZZ(bitSize);
+    p = NTL::GenPrime_ZZ(bitSize); // Просто простое
     while (true)
     {
-        alpha = NTL::RandomBnd(p);
+        alpha = NTL::RandomBnd(p); // обрй элт грпы
 
         if (NTL::PowerMod(alpha, p - 1, p) == NTL::conv<NTL::ZZ>(1))
         {
@@ -35,15 +35,15 @@ MyCryptoLib::ElGamalKey MyCryptoLib::ElGamalKey::generate(size_t bitSize)
 //        phi = p - 1;
 //    }
 
-    phi = NTL::RandomBnd(p - 2) + 1;
-    beta = NTL::PowerMod(alpha, phi, p);
+    a = NTL::RandomBnd(p - 1) + 1; // random [1, p-2]
+    beta = NTL::PowerMod(alpha, a, p);
 
-    if (NTL::conv<int>(NTL::PowerMod(phi, p - 1, p)) != 1)
+    if (NTL::conv<int>(NTL::PowerMod(a, p - 1, p)) != 1)
     {
         throw std::exception(); // Что то пошло не так. ХЗ как выбирать альфу. по идее так
     }
 
-    return ElGamalKey(phi, p, alpha, beta);
+    return ElGamalKey(a, p, alpha, beta);
 }
 
 MyCryptoLib::ElGamalKey MyCryptoLib::ElGamalKey::fromPKCS8(PKCS8 *pkcs8obj)

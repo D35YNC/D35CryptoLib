@@ -20,8 +20,7 @@ void user_2();
 #define EXPONENTIAL
 
 #ifdef EXPONENTIAL
-//static const std::string SHARED_PRIVATE_PASSWORD = "|bE8%au#u'ho2la@@uh4aj.mo";
-static const std::string SHARED_PRIVATE_PASSWORD = "#2cr&.ocW'}7^va!kd4y,@C(";
+static const std::string SHARED_PRIVATE_PASSWORD = "|bE8%au#u'ho2la@@uh4aj.mo";
 #endif
 
 
@@ -120,7 +119,7 @@ std::vector<NTL::ZZ> findPrimefactors(NTL::ZZ n)
     while (n % 2 == 0)
     {
         s.insert(NTL::conv<NTL::ZZ>(2));
-        n = n/2;
+        n = n / 2;
     }
 
     // n должно быть нечетным в этой точке. Так что мы можем пропустить
@@ -154,7 +153,6 @@ NTL::ZZ findPrimitive(NTL::ZZ n)
 
     for (NTL::ZZ i = NTL::conv<NTL::ZZ>(2); i < phi; i--)
     {
-
         // Перебираем все простые факторы фи.
         // и проверяем, нашли ли мы силу со значением 1
 
@@ -204,7 +202,7 @@ void user_1()
     NTL::ZZ g(17);
 #else
     MyCryptoLib::SHA256 sha;
-    sha.update("213");
+    sha.update(SHARED_PRIVATE_PASSWORD);
     NTL::ZZ g = NTL::ZZFromBytes(sha.digest().data(), 32);
 #endif
     const int enable = 1;

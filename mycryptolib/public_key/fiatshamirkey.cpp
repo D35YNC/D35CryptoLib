@@ -25,6 +25,7 @@ MyCryptoLib::FiatShamirKey MyCryptoLib::FiatShamirKey::generate(size_t bitSize, 
     }
     NTL::SetSeed(seed.data(), seed.size());
 
+    // random pq
     p = NTL::GenPrime_ZZ(static_cast<long>(bitSize / 2));
     q = NTL::GenPrime_ZZ(static_cast<long>(bitSize / 2));
     n = p * q;
@@ -33,14 +34,14 @@ MyCryptoLib::FiatShamirKey MyCryptoLib::FiatShamirKey::generate(size_t bitSize, 
     {
         do
         {
-            tmp = NTL::RandomBnd(n);
+            tmp = NTL::RandomBnd(n); // random A[i]. GCD(a, n) == 1
         } while (NTL::GCD(tmp, n) != NTL::conv<NTL::ZZ>(1));
         a[i] = tmp;
     }
 
     for (int i = 0; i < i_count; i++)
     {
-        tmp = NTL::PowerMod(NTL::InvMod(a[i], n), 2, n);
+        tmp = NTL::PowerMod(NTL::InvMod(a[i], n), 2, n); // b[i] = (a[i]^-1) ^ 2 mod n
         b[i] = tmp;
     }
 
