@@ -1,16 +1,20 @@
-# Cxx cryptolib Ver0.5L_ALPHA
+# Cpp cryptolib Ver0.08[ALPHA]
 
-Зависит от [NTL](https://libntl.org/) и [GMP](https://gmplib.org/)  
-  
-[ДоКуМеНтАцИя ХД](DOCS.md)
 
-alert: из за (моей) реализации рандома и "еще чего-нибудь" - либа непригодна для использования под виндой =)
+### DEPENDENCIES
+ - [NTL](https://libntl.org/)
+ - [GMP](https://gmplib.org/)
+
 
 ### INSTALL
- - _ins_
+ - Когда-нибудь здесь что нибудь-будет
+
 
 ### USE
- - _ins_
+ - Когда-нибудь здесь что нибудь-будет
+
+
+
 
 
 

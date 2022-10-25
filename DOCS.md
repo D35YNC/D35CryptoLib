@@ -1,6 +1,6 @@
 # Всем привет это документация
 извините  
-
+// устаревшее
 ### Cтруктура
 <details><summary>~$ tree ./cryptolib</summary>
 
@@ -52,11 +52,6 @@
  - `static std::vector<uint8_t> b64Decode(const std::string &data);`
 Для `MyCryptoLib::Base64` - методы аналогичны, но с префиксом `b32` вместо `b64`.  
 
-
-#### `MyCryptoLib::PKCS7`
-#### `MyCryptoLib::PKCS8/12`
-,kznm  
-здесь все ясно  
 
 #### `MyCryptoLib::SHA256/512`
 BASED ON `IHash` Abstract Class  
