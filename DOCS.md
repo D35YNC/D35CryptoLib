@@ -1,6 +1,7 @@
 # Всем привет это документация
 извините  
-// устаревшее
+
+
 ### Cтруктура
 <details><summary>~$ tree ./cryptolib</summary>
 
@@ -41,44 +42,131 @@
 
 </details>
 
-### Классы
+### Содержание
+ - [Encoding](#encoding)  
+    - Base64
+    - Base32
+    - ~~CAdES~~ LEGACY
+    - ~~PKCS8~~ LEGACY
+    - ~~PKCS12~~ LEGACY
+- [Hash](#hash)
+    - SHA256
+    - SHA512
+    - Streebog (GOST 34.11-2012)
+    - HMAC
+- [Public Key](#pubkey)
+    - RSA (Ciper + sign)
+        - RSAKey
+    - ElGamal (Sign)
+        - ElGamalKey
+    - FiatShamir (Sign)
+        - FiatShamirKey
+- [Symmetric Key](#symkey)
+    - Key
+    - TODO
+        - AES, ... ?
+- [other](#oth)
+    - Exceptions
+    - Utils
 
-#### `MyCryptoLib::Base64`
-Кодирование:  
- - `static std::string b64Encode(const std::vector<uint8_t> &data);`
- - [Дописать перегрузку]
 
-Декодирование:  
- - `static std::vector<uint8_t> b64Decode(const std::string &data);`
-Для `MyCryptoLib::Base64` - методы аналогичны, но с префиксом `b32` вместо `b64`.  
+<a name="encoding"><h3>Encoding</h3></a>
+
+#### `D35Crypto::Base64`
+Encode:  
+ - `static std::string encode(const std::string &data);`
+ - `static std::string encode(const std::vector<uint8_t> &data);`
 
 
-#### `MyCryptoLib::SHA256/512`
-BASED ON `IHash` Abstract Class  
-Вычисление дайджеста:  
- - `void update(const std::vector<uint8_t>&) override;` + 2 overloads - Update digest
- - `OvErLoAd`
+Decode:  
+ - `static std::vector<uint8_t> decode(const std::string &data);`
 
-Вывод:  
- - `std::string hexDigest();` (from IHash) - gets digest
- - `mOr3`
 
-#### `MyCryptoLib::Streebog`
-BASED ON `IHash` Abstract Class  
-`void setMode(int digestSize);` - Устанавливает размер дайджеста  
-Остальное аналогично SHA(т.е согласно интерфейсу)  
+#### `D35Crypto::Base32`
 
-#### `MyCryptoLib::HMAC`
-Конструктор:  
- - `HMAC(IHash *hashAlgorythm);` - HMAC init
+Encode:  
+ - `static std::string encode(const std::string &data);`
+ - `static std::string encode(const std::vector<uint8_t> &data);`
 
-Вычисление HMAC:
- - `void create(const std::vector<uint8_t>&, const Key&);` + 1 overload - create HMAC
 
-Вывод:  
- - `std::string hex();` - HMAC output
- - MoR3
- 
+Decode:  
+ - `static std::vector<uint8_t> decode(const std::string &data);`
+
+Base64/32 usage:
+```cpp
+std::string b64result = D35Crypto::Base64::encode("Some inpt string");
+```
+
+
+<a name="hash"><h3>Hash</h3></a>
+
+#### `D35Crypto::HashBase`
+
+Basic abstract class for all hash functions.  
+Requires redefinition of methods:  
+ - `virtual void update(const std::string &data) = 0;`
+ - `virtual void update(const std::vector<uint8_t> &data) = 0;`
+ - `virtual void update(std::ifstream& file) = 0;`
+ - `virtual size_t blockSize() = 0;`
+// Add descriptions  
+
+It also provides the results of the functions:
+ - `std::vector<uint8_t> digest()` - Returns raw-bytes digest
+ - `std::string hexDigest()` - Returns hex-encoded digest
+  
+For normal operation of all methods, it is necessary to put the digest in `D35Crypto::HashBase::_digest` (`this->_digest`):  
+Definition:
+```cpp
+protected:
+    std::vector<uint8_t> _digest;
+```
+Usage:  
+```cpp
+void update(const std::vector<uint8_t> &data)
+{
+    std::vector<uint8_t> digest;
+    /* Calculating */
+    this->_digest = digest;
+}
+```
+
+#### `D35Crypto::SHA256: public HashBase`
+
+Calculating digest according to `D35Crypto::HashBase`  
+Output of the result according to `D35Crypto::HashBase`
+
+
+#### `D35Crypto::SHA512: public HashBase`
+
+Calculating digest according to `D35Crypto::HashBase`  
+Output of the result according to `D35Crypto::HashBase`
+
+
+#### `D35Crypto::Streebog: public HashBase`
+
+Calculating digest according to `D35Crypto::HashBase`  
+Output of the result according to `D35Crypto::HashBase`  
+
+Setup digest size:  
+Always initialized with digest size = 64 bytes (512 bits). For change 'work mode' u need use `void setMode(int digestSize);`. That method manually set required digest size. **Takes values 256 and 512**.
+
+#### `D35Crypto::HMAC<HashBase>`
+Init:  
+`D35Crypto::HMAC<D35Crypto::SHA256> hmac;` - eg  
+
+Calculating:
+ - `void create(const std::string&, const Key&);`
+ - `void create(const std::vector<uint8_t>&, const Key&);`
+
+Output:  
+ - `std::vector<uint8_t> raw();` - raw-bytes hmac
+ - `std::string hex();` - hex-encoded hmac
+
+Key peparing:  
+// todo
+
+<a name="pubkey"><h3>Public key</h3></a>
+
 #### `MyCryptoLib::RSA`
 InPrOgReSs  
 
@@ -90,6 +178,8 @@ InPrOgReSs
 
 #### `MyCryptoLib::ElGamalKey`
 InPrOgReSs  
+
+<a name="symkey"><h3>Symmetric key</h3></a>
 
 #### `MyCryptoLib::Key`
 По факту это обертка над вектором байт :trollface:  
