@@ -7,10 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGSS} -std=c++20 -lntl -lgmp -lm")
 
 set(HDR_FILES "exceptions.h" "utils.h"
-              "symmetric_key/key.h"
+              "symmetric_key/key.h" "symmetric_key/symmetric_cipher_base.h" "symmetric_key/rc4.h"
               "public_key/rsakey.h" "public_key/rsa.h" "public_key/elgamal.h" "public_key/elgamalkey.h" "public_key/fiatshamir.h" "public_key/fiatshamirkey.h"
               "encoding/base64.h" "encoding/base32.h" "encoding/pkcs_base.h" "encoding/pkcs7.h" "encoding/cades.h" "encoding/pkcs8.h" "encoding/pkcs12.h"
-              "hash/hash_base.h" "hash/sha256.h" "hash/sha512.h" "hash/streebog.h" "hash/hmac.h")
+              "hash/hash_base.h" "hash/sha256.h" "hash/sha512.h" "hash/streebog.h" "hash/hmac.h" "hash/crc32.h")
 
 set(SRC_FILES "hash/sha256.cpp" "hash/sha512.cpp" "hash/streebog.cpp"
               "encoding/pkcs7.cpp" "encoding/cades.cpp" "encoding/pkcs8.cpp" "encoding/pkcs12.cpp"
