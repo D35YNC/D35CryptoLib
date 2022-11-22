@@ -7,8 +7,6 @@
 #include <random>
 #include <stdexcept> // for invalid_argument exception
 
-#include "../encoding/base64.h"
-
 namespace D35Crypto
 {
 
@@ -42,11 +40,6 @@ public:
     size_t size() const
     {
         return this->bytes.size();
-    }
-
-    std::string base64() const
-    {
-        return D35Crypto::Base64::encode(this->bytes);
     }
 
     std::vector<uint8_t> raw() const
@@ -90,6 +83,15 @@ public:
         }
 
         return Key(bytes);
+    }
+
+    uint8_t operator[](uint64_t index)
+    {
+        if (index < this->bytes.size())
+        {
+            return bytes[index];
+        }
+        throw std::out_of_range("Index out of range");
     }
 
 protected:

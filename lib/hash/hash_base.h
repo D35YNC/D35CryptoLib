@@ -12,7 +12,7 @@ namespace D35Crypto
 class HashBase
 {
 public:
-    HashBase(int digestSize, std::string name) :
+    HashBase(int digestSize, const std::string &name) :
         _digest(digestSize, 0x00),
         _name(name)
     { }
