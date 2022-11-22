@@ -1,5 +1,21 @@
 # Cpp cryptolib Ver0.08[ALPHA]
 
+### FEATURES
+ - Encodings:
+   - [X] Base64/32 
+ - Hashes:
+   - [X] CRC32 
+   - [X] SHA256
+   - [X] SHA512
+   - [X] STREEBOG 256/512 (GOST 34.11-2012)
+ - Asymmetric ciphers:
+   - [X] RSA: Encrypt + Sign
+   - [X] ElGamal: Sign
+   - [X] FiatShamir: Sign
+ - Symmetric ciphers:
+   - [X] RC4
+   - [ ] TODO: AES 
+
 
 ### DEPENDENCIES
  - [NTL](https://libntl.org/)
