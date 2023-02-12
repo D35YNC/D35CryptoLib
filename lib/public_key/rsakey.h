@@ -9,13 +9,9 @@
 #include <algorithm>
 
 #include <NTL/ZZ.h>
-#include <gmpxx.h>
+//#include <gmpxx.h>
 
 #include "../exceptions.h"
-
-#include "../encoding/base64.h"
-#include "../encoding/pkcs8.h"
-#include "../encoding/pkcs12.h"
 
 
 namespace D35Crypto
@@ -35,19 +31,18 @@ public:
         d(NTL::conv<NTL::ZZ>(0)), p(NTL::conv<NTL::ZZ>(0)), q(NTL::conv<NTL::ZZ>(0))
     { }
     // For custom priv key + extract pubkey
-    RSAKey(NTL::ZZ _p, NTL::ZZ _q, NTL::ZZ _e) :
+    RSAKey(NTL::ZZ _p, NTL::ZZ _q, NTL::ZZ _e, NTL::ZZ _d) :
         n(_p * _q), e(_e),
-        d(NTL::conv<NTL::ZZ>(0)), p(_p), q(_q)
-    {
-        NTL::ZZ phi = (p - 1) * (q - 1);
-        d = NTL::InvMod(e % phi, phi);
-    }
+        d(_d), p(_p), q(_q)
+    { }
 
     static RSAKey generate(size_t bitSize);
-    static RSAKey fromPKCS8(PKCS8 *pkcs8obj);
-    static RSAKey fromPKCS12(PKCS12 *pkcs12obj);
-    static RSAKey fromPKCS8File(const std::string &filename);
-    static RSAKey fromPKCS12File(const std::string &filename);
+
+    /*TODO: ASN1 Encoding*/
+    static RSAKey pubKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
+    static RSAKey privKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
+    static RSAKey pubKeyFromFile(const std::string &filename);
+    static RSAKey privKeyFromFile(const std::string &filename);
 
     bool isPrivate() const;
     bool canSign() const;
@@ -55,9 +50,6 @@ public:
     bool canDecrypt() const;
     size_t blockSize() const;
     size_t size() const;
-
-    PKCS12 exportPrivateKey() const;
-    PKCS8 exportPublicKey() const;
 
     std::vector<uint8_t> exportPrivateKeyBytes() const;
     std::vector<uint8_t> exportPublicKeyBytes() const;
