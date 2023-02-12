@@ -11,17 +11,10 @@ public:
     { }
 };
 
-class BadPKCSFileStructureException: public std::runtime_error
+class BadKeyfileStructureException: public std::runtime_error
 {
 public:
-    BadPKCSFileStructureException(const std::string &msg) : std::runtime_error(msg)
-    { }
-};
-
-class ItsNotHashException: public std::runtime_error
-{
-public:
-    ItsNotHashException(const std::string &msg) : std::runtime_error(msg)
+    BadKeyfileStructureException(const std::string &msg) : std::runtime_error(msg)
     { }
 };
 

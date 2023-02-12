@@ -25,7 +25,7 @@ public:
     {
         if (!std::is_base_of_v<HashBase, T>)
         {
-            throw D35Crypto::ItsNotHashException("it is necessary that the hash function class inherits from D35Crypto::HashBase");
+            throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
         }
         HashBase* hash = new T();
 
@@ -43,7 +43,7 @@ public:
     {
         if (!std::is_base_of_v<HashBase, T>)
         {
-            throw D35Crypto::ItsNotHashException("it is necessary that the hash function class inherits from D35Crypto::HashBase");
+            throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
         }
 
         HashBase *hash = new T();
