@@ -8,19 +8,11 @@
 ```bash
 ├── encoding
 │   ├── base32.h
-│   ├── base64.h
-│   ├── ipkcs.h
-│   ├── pkcs12.cpp
-│   ├── pkcs12.h
-│   ├── pkcs7.cpp
-│   ├── pkcs7.h
-│   ├── pkcs8.cpp
-│   └── pkcs8.h
-├── exceptions.h
+│   └── base64.h
 ├── hash
-│   ├── hmac.cpp
+│   ├── crc32.h
+│   ├── hash_base.h
 │   ├── hmac.h
-│   ├── ihash.h
 │   ├── sha256.cpp
 │   ├── sha256.h
 │   ├── sha512.cpp
@@ -28,16 +20,22 @@
 │   ├── streebog.cpp
 │   └── streebog.h
 ├── public_key
-│   ├── elgamal.cpp
 │   ├── elgamal.h
 │   ├── elgamalkey.cpp
 │   ├── elgamalkey.h
+│   ├── fiatshamir.h
+│   ├── fiatshamirkey.cpp
+│   ├── fiatshamirkey.h
 │   ├── rsa.cpp
 │   ├── rsa.h
 │   ├── rsakey.cpp
 │   └── rsakey.h
-└── symmetric_key
-    └── key.h
+├── symmetric_key
+│   ├── key.h
+│   ├── rc4.h
+│   └── symmetric_cipher_base.h
+├── exceptions.h
+└── utils.h
 ```
 
 </details>
@@ -46,9 +44,6 @@
  - [Encoding](#encoding)  
     - Base64
     - Base32
-    - ~~CAdES~~ LEGACY
-    - ~~PKCS8~~ LEGACY
-    - ~~PKCS12~~ LEGACY
 - [Hash](#hash)
     - SHA256
     - SHA512
@@ -63,8 +58,7 @@
         - FiatShamirKey
 - [Symmetric Key](#symkey)
     - Key
-    - TODO
-        - AES, ... ?
+    - RC4
 - [other](#oth)
     - Exceptions
     - Utils
@@ -149,7 +143,7 @@ Always initialized with digest size = 64 bytes (512 bits). For change 'work mode
 
 #### `D35Crypto::HMAC<HashBase>`
 Init:  
-`D35Crypto::HMAC<D35Crypto::SHA256> hmac;` - eg  
+`D35Crypto::HMAC<D35Crypto::SHA256> hmac;`
 
 Calculating:
  - `void create(const std::string&, const Key&);`
