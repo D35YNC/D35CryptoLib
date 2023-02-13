@@ -94,9 +94,10 @@ public:
 
         std::vector<uint8_t> wBytes(NTL::NumBytes(w));
         NTL::BytesFromZZ(wBytes.data(), w, wBytes.size());
-        dataBytes.resize(dataBytes.size() + wBytes.size());
-        std::copy(wBytes.begin(), wBytes.end(), dataBytes.begin() + (dataBytes.size() - wBytes.size()));
-        hash->update(dataBytes);
+        std::vector<uint8_t> tmpData(data.begin(), data.end());
+        tmpData.resize(tmpData.size() + wBytes.size());
+        std::copy(wBytes.begin(), wBytes.end(), tmpData.begin() + (tmpData.size() - wBytes.size()));
+        hash->update(tmpData);
 
         return hash->digest() == s;
     }

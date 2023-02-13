@@ -39,11 +39,11 @@ public:
     size_t blockSize() const;
     size_t size() const;
 
-    std::vector<uint8_t> exportPrivateKey() const;
-    std::vector<uint8_t> exportPublicKey() const;
+//    std::vector<uint8_t> exportPrivateKey() const;
+//    std::vector<uint8_t> exportPublicKey() const;
 
-    std::vector<uint8_t> exportPrivateKeyBytes() const;
-    std::vector<uint8_t> exportPublicKeyBytes() const;
+//    std::vector<uint8_t> exportPrivateKeyBytes() const;
+//    std::vector<uint8_t> exportPublicKeyBytes() const;
 
     // pubk
     NTL::ZZ getAlpha() const;

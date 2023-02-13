@@ -18,8 +18,6 @@
 #include "../hash/sha512.h"
 #include "../hash/streebog.h"
 #include "../encoding/base64.h"
-#include "../encoding/pkcs8.h"
-#include "../encoding/pkcs12.h"
 
 
 namespace D35Crypto
@@ -48,10 +46,6 @@ public:
     }
 
     static FiatShamirKey generate(size_t bitSize, HashBase *_hash);
-    static FiatShamirKey fromPKCS8(PKCS8 *pkcs8obj);
-    static FiatShamirKey fromPKCS12(PKCS12 *pkcs12obj);
-    static FiatShamirKey fromPKCS8File(const std::string &filename);
-    static FiatShamirKey fromPKCS12File(const std::string &filename);
 
     bool isPrivate() const;
     bool canSign() const;
@@ -60,11 +54,11 @@ public:
     size_t blockSize() const;
     size_t size() const;
 
-    PKCS12 exportPrivateKey() const;
-    PKCS8 exportPublicKey() const;
+//    std::vector<uint8_t> exportPrivateKey() const;
+//    std::vector<uint8_t> exportPublicKey() const;
 
-    std::vector<uint8_t> exportPrivateKeyBytes() const;
-    std::vector<uint8_t> exportPublicKeyBytes() const;
+//    std::vector<uint8_t> exportPrivateKeyBytes() const;
+//    std::vector<uint8_t> exportPublicKeyBytes() const;
 
     NTL::ZZ getP() const;
     NTL::ZZ getQ() const;
