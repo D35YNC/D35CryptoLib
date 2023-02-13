@@ -92,16 +92,13 @@ Encode:
 Decode:  
  - `static std::vector<uint8_t> decode(const std::string &data);`
 
-Base64/32 usage:
-```cpp
-std::string b64result = D35Crypto::Base64::encode("Some inpt string");
-```
-
+Some usage:
+https://github.com/D35YNC/D35CryptoLib/blob/0aefd556fe0dc89fbfec8d8f2173f472a0098cef/examples/base32-64/main.cpp#L14-L26
 
 <a name="hash"><h3>Hash</h3></a>
 
 #### `D35Crypto::HashBase`
-
+*This paragraph needs rework*  
 Basic abstract class for all hash functions.  
 Requires redefinition of methods:  
  - `virtual void update(const std::string &data) = 0;`
@@ -162,25 +159,27 @@ Output:
  - `std::vector<uint8_t> raw();` - raw-bytes hmac
  - `std::string hex();` - hex-encoded hmac
 
-Key peparing:  
-// todo
+Some usages:
+https://github.com/D35YNC/D35CryptoLib/blob/aff9435339139d9fbed014ffb294e553c82e2f2e/examples/sha/main.cpp#L33-L35
+
+https://github.com/D35YNC/D35CryptoLib/blob/aff9435339139d9fbed014ffb294e553c82e2f2e/examples/hmac/main.cpp#L9-L14
 
 <a name="pubkey"><h3>Public key</h3></a>
 
 #### `MyCryptoLib::RSA`
-InPrOgReSs  
+// TODO  
 
 #### `MyCryptoLib::ElGamal`
-InPrOgReSs  
+// TODO  
 
 #### `MyCryptoLib::RSAKey`
-InPrOgReSs  
+// TODO  
 
 #### `MyCryptoLib::ElGamalKey`
-InPrOgReSs  
+// TODO  
 
 <a name="symkey"><h3>Symmetric key</h3></a>
 
 #### `MyCryptoLib::Key`
 По факту это обертка над вектором байт :trollface:  
-InPrOgReSs  
+// TODO  
