@@ -54,11 +54,6 @@ public:
         return this->encrypt(buffer);
     }
 
-//    std::vector<uint8_t> encrypt(const std::string &plaintext)
-//    {
-//        return this->encrypt(std::vector<uint8_t>(plaintext.begin(), plaintext.end()));
-//    }
-
     size_t blockSize() override
     {
         return 0; // xdd

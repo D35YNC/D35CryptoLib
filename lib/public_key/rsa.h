@@ -6,9 +6,7 @@
 #include "rsakey.h"
 
 #include "../exceptions.h"
-#include "../encoding/pkcs7.h"
-#include "../encoding/cades.h"
-#include "../hash/hash_base.h" // for sign
+#include "../hash/hash_base.h"
 
 namespace D35Crypto
 {
@@ -27,7 +25,7 @@ public:
         {
             throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
         }
-        HashBase* hash = new T();
+        HashBase *hash = new T();
 
         hash->update(data);
         std::vector<uint8_t> signature = hash->digest();

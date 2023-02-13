@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #include <NTL/ZZ.h>
-#include <gmpxx.h>
+//#include <gmpxx.h>
 
 #include "../exceptions.h"
 
