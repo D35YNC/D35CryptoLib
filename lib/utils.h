@@ -1,46 +1,38 @@
 #pragma once
 
 #include <string>
-
-#include "hash/hash_base.h"
-#include "hash/sha256.h"
-#include "hash/sha512.h"
-#include "hash/streebog.h"
+#include <vector>
+#include <sstream> // |
+#include <iomanip> // +- for std::string rawString(){...}
 
 namespace D35Crypto
 {
-    
-    static HashBase* hashIdToHashPtr(const std::string &hashId)
+static std::vector<uint8_t> xorBlocks(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b)
+{
+    if (a.size() != b.size())
     {
-        HashBase* hash = nullptr;
-
-        if (hashId == "SHA256")
-        {
-            hash = new D35Crypto::SHA256();
-        }
-        else if (hashId == "SHA512")
-        {
-            hash = new D35Crypto::SHA512();
-        }
-        else if (hashId == "Streebog256")
-        {
-            D35Crypto::Streebog *s;
-            s = new D35Crypto::Streebog();
-            s->setMode(256);
-            hash = reinterpret_cast<HashBase*>(s);
-        }
-        else if (hashId == "Streebog512")
-        {
-            D35Crypto::Streebog *s;
-            s = new D35Crypto::Streebog();
-            s->setMode(512);
-            hash = reinterpret_cast<HashBase*>(s);
-        }
-
-        return hash;
+        throw std::logic_error("Cant xor blocks not equeal sizes");
+        return {};
     }
-    
-    
-    
-    
+    std::vector<uint8_t> result(a.size(), 0x00);
+    for (int i = 0; i < a.size(); i++)
+    {
+        result[i] = a[i] ^ b[i];
+    }
+    return result;
+}
+
+static std::string bytesToHexString(const std::vector<uint8_t> &bytes)
+{
+    std::stringstream ss;
+    ss << std::setfill('0') << std::hex;
+
+    for (int i = 0; i < bytes.size(); i++)
+    {
+        ss << std::setw(2) << static_cast<unsigned int>(bytes[i]);
+    }
+
+    return ss.str();
+}
+
 }

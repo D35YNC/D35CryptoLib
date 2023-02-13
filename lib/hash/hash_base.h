@@ -7,6 +7,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "../utils.h"
+
 namespace D35Crypto
 {
 class HashBase
@@ -35,15 +37,7 @@ public:
 
     std::string hexDigest() const
     {
-        std::stringstream ss;
-        ss << std::setfill('0') << std::hex;
-
-        for (int i = 0; i < this->_digest.size(); i++)
-        {
-            ss << std::setw(2) << static_cast<unsigned int>(this->_digest[i]);
-        }
-
-        return ss.str();
+        return bytesToHexString(this->digest());
     }
 
     size_t digestSize() const
