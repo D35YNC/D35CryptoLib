@@ -7,12 +7,13 @@
 #include <type_traits>
 
 #include "hash_base.h"
+#include "../utils.h"
 #include "../exceptions.h"
-#include "../symmetric_key/key.h"
 
 
 namespace D35Crypto
 {
+
 template <class T>
 class HMAC
 {
@@ -31,14 +32,14 @@ public:
         delete this->hash;
     }
 
-    void create(const std::string& data, const Key& key)
+    void create(const std::string& data, const std::vector<uint8_t>& key)
     {
         this->create(std::vector<uint8_t>(data.begin(), data.end()), key);
     }
 
-    void create(const std::vector<uint8_t>& data, const Key& key)
+    void create(const std::vector<uint8_t>& data, const std::vector<uint8_t> &key)
     {
-        std::vector<uint8_t> key_0 = key.raw();
+        std::vector<uint8_t> key_0(key.begin(), key.end());
 
         if (key.size() > this->hash->blockSize())
         {
@@ -76,22 +77,19 @@ public:
         this->hmac = this->hash->digest();
     }
 
-    std::vector<uint8_t> raw()
+    std::vector<uint8_t> digest()
     {
         return this->hmac;
     }
 
-    std::string hex()
+    std::string hexDigest()
     {
-        std::stringstream ss;
-        ss << std::setfill('0') << std::hex;
+        return bytesToHexString(this->hmac);
+    }
 
-        for (int i = 0; i < this->hmac.size(); i++)
-        {
-            ss << std::setw(2) << (unsigned int)(this->hmac[i]);
-        }
-
-        return ss.str();
+    size_t digestSize()
+    {
+        return this->hash->digestSize();
     }
 
     std::string name()
@@ -103,6 +101,7 @@ private:
     T* hash;
     std::vector<uint8_t> hmac;
 };
+
 }
 
 #endif // HMAC_H

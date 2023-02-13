@@ -10,6 +10,6 @@ int main(int argc, char **argv)
     std::cout << "HMACKING with key: " << k.hex() << std::endl;
 
     D35Crypto::HMAC<D35Crypto::SHA256> hmac;
-    hmac.create("Som estring", k);
-    std::cout << hmac.name() << ' ' << hmac.hex() << std::endl;
+    hmac.create("Som estring", k.raw());
+    std::cout << hmac.name() << ' ' << hmac.hexDigest() << std::endl;
 }
