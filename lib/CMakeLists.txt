@@ -4,7 +4,7 @@ project(d35crypto LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGSS} -std=c++20 -lntl -lm")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGSS}")
 
 set(HDR_FILES exceptions.h utils.h
               symmetric_key/key.h symmetric_key/symmetric_cipher_base.h symmetric_key/rc4.h
