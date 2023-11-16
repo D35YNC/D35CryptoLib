@@ -15,8 +15,6 @@
 #include "../lib/public_key/fiatshamir.h"
 #include "../lib/public_key/fiatshamirkey.h"
 
-#include "../lib/encoding/cades.h"
-
 
 void workServer();
 void workClient();
@@ -24,6 +22,8 @@ void keygen();
 // need rework
 int main(int argc, char **argv)
 {
+    std::cout << "NOT IMPLEMENTED =(" << std::endl;
+    return 0;
 //    keygen();
 //    return 0;
     if (argc < 1)
@@ -31,19 +31,19 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    std::vector<std::string> args;
-    args.assign(argv + 1, argv + argc);
+//    std::vector<std::string> args;
+//    args.assign(argv + 1, argv + argc);
 
-    if (args[0] == "--server")
-    {
-        workServer();
-    }
-    else if (args[0] == "--client")
-    {
-        workClient();
-    }
+//    if (args[0] == "--server")
+//    {
+//        workServer();
+//    }
+//    else if (args[0] == "--client")
+//    {
+//        workClient();
+//    }
 }
-
+/*
 int sendall(int sockfd, const std::vector<uint8_t> &data, int flags = 0)
 {
     size_t len = data.size();
@@ -476,3 +476,4 @@ void keygen()
     outfile.flush();
     outfile.close();
 }
+*/

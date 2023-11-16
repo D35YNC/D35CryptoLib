@@ -7,6 +7,9 @@
 
 int main(int argc, char **argv)
 {
+    std::cout << "NOT IMPLEMENTED =(" << std::endl;
+    return 0;
+
     std::cout << "Generating 4096 bit keypair ";
 
     D35Crypto::RSAKey keypair = D35Crypto::RSAKey::generate(4096);
@@ -29,7 +32,7 @@ int main(int argc, char **argv)
 
     std::cout << "[OK]" << std::endl << "Encrypting some data ";
 
-    D35Crypto::RSAKey pubk = D35Crypto::RSAKey::pubKeyFromFile("key.pub");
+    D35Crypto::RSAKey pubk = D35Crypto::RSAKey::publicKeyFromBytes({});
 
     std::cout << "[OK]" << std::endl;
     D35Crypto::RSA rsa;
@@ -44,7 +47,7 @@ int main(int argc, char **argv)
     outfile.close();
 
     std::cout << "[OK]" << std::endl << "Loading privkey ";
-    D35Crypto::RSAKey privk = D35Crypto::RSAKey::privKeyFromFile("key");
+    D35Crypto::RSAKey privk = D35Crypto::RSAKey::privateKeyFromBytes({});
     std::cout << "[OK]" << std::endl << "Decrypting data.enc";
 
     buffer = rsa.decrypt(buffer, privk);
