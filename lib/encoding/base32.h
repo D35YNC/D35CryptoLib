@@ -6,22 +6,17 @@
 
 namespace D35Crypto
 {
-class Base32
+    class Base32
 {
 public:
-    static std::string encode(const std::string &data)
-    {
-        return Base32::encode(std::vector<uint8_t>(data.begin(), data.end()));
-    }
-
     static std::string encode(const std::vector<uint8_t> &data)
     {
         std::string result;
 
         // Работаем с блоками по 5 байт = 40 бит
         uint8_t block[5] = { 0x00 };
-        int i = 0;
         int blockSize = 0;
+        int i = 0;
         while (i < data.size())
         {
             block[i % 5] = data[i];
@@ -31,11 +26,11 @@ public:
             if (blockSize == 5)
             {
                 uint64_t buffer =
-                        ((uint64_t)block[0] << 32) |
-                        ((uint64_t)block[1] << 24) |
-                        ((uint64_t)block[2] << 16) |
-                        ((uint64_t)block[3] << 8 ) |
-                        ((uint64_t)block[4]);
+                        (static_cast<uint64_t>(block[0]) << 32) |
+                        (static_cast<uint64_t>(block[1]) << 24) |
+                        (static_cast<uint64_t>(block[2]) << 16) |
+                        (static_cast<uint64_t>(block[3]) << 8 ) |
+                        (static_cast<uint64_t>(block[4])      );
 
                 for (int j = 7; j >= 0; j--)
                 {
@@ -53,17 +48,17 @@ public:
                 block[i] = 0;
             }
             uint64_t buffer =
-                    ((uint64_t)block[0] << 32) |
-                    ((uint64_t)block[1] << 24) |
-                    ((uint64_t)block[2] << 16) |
-                    ((uint64_t)block[3] << 8 ) |
-                    ((uint64_t)block[4]);
+                    (static_cast<uint64_t>(block[0]) << 32) |
+                    (static_cast<uint64_t>(block[1]) << 24) |
+                    (static_cast<uint64_t>(block[2]) << 16) |
+                    (static_cast<uint64_t>(block[3]) << 8 ) |
+                    (static_cast<uint64_t>(block[4])      );
 
             // ПОЧЕМУ 6 А НЕ 7 ПОЧЕМУ ПОЧЕМУ
             // потому что
             // Потому что нам не нужно зацепить следующий кусок блока кароче как это сказать
             // Ну а если так то мы его не цепляем вот
-            for (int i = 7; i >= 6 - blockSize; i--)
+            for (int i = 7; i >= 0; i--)
             {
                 result += Base32::base32Alphabet[(buffer >> (5 * i)) % 32];
             }
@@ -124,14 +119,14 @@ public:
             if (blockSize == 8)
             {
                 uint64_t buffer =
-                        ((uint64_t)block[0] << 35) |
-                        ((uint64_t)block[1] << 30) |
-                        ((uint64_t)block[2] << 25) |
-                        ((uint64_t)block[3] << 20) |
-                        ((uint64_t)block[4] << 15) |
-                        ((uint64_t)block[5] << 10) |
-                        ((uint64_t)block[6] << 5 ) |
-                        ((uint64_t)block[7]);
+                        (static_cast<uint64_t>(block[0]) << 35) |
+                        (static_cast<uint64_t>(block[1]) << 30) |
+                        (static_cast<uint64_t>(block[2]) << 25) |
+                        (static_cast<uint64_t>(block[3]) << 20) |
+                        (static_cast<uint64_t>(block[4]) << 15) |
+                        (static_cast<uint64_t>(block[5]) << 10) |
+                        (static_cast<uint64_t>(block[6]) << 5 ) |
+                        (static_cast<uint64_t>(block[7])      );
 
                 for (int j = 4; j >= 0; j--)
                 {
@@ -149,15 +144,16 @@ public:
                 block[i] = 0;
             }
 
+
             uint64_t buffer =
-                    ((uint64_t)block[0] << 35) |
-                    ((uint64_t)block[1] << 30) |
-                    ((uint64_t)block[2] << 25) |
-                    ((uint64_t)block[3] << 20) |
-                    ((uint64_t)block[4] << 15) |
-                    ((uint64_t)block[5] << 10) |
-                    ((uint64_t)block[6] << 5 ) |
-                    ((uint64_t)block[7]);
+                    (static_cast<uint64_t>(block[0]) << 35) |
+                    (static_cast<uint64_t>(block[1]) << 30) |
+                    (static_cast<uint64_t>(block[2]) << 25) |
+                    (static_cast<uint64_t>(block[3]) << 20) |
+                    (static_cast<uint64_t>(block[4]) << 15) |
+                    (static_cast<uint64_t>(block[5]) << 10) |
+                    (static_cast<uint64_t>(block[6]) << 5 ) |
+                    (static_cast<uint64_t>(block[7])      );
 
             for (int j = 4; j >= blockSize - 4; j--)
             {

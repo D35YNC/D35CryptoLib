@@ -9,17 +9,12 @@ namespace D35Crypto
     class Base64
 {
 public:
-    static std::string encode(const std::string &data)
-    {
-        return Base64::encode(std::vector<uint8_t>(data.begin(), data.end()));
-    }
-
     static std::string encode(const std::vector<uint8_t> &data)
     {
         std::string result;
 
         // Работаем с блоками по 3 байта = 24 бита
-        uint8_t block[3];
+        uint8_t block[3] = { 0x00 };
         int blockSize = 0;
         int i = 0;
         while (i < data.size())
@@ -30,9 +25,12 @@ public:
 
             if (blockSize == 3)
             {
-                uint32_t buffer = ((uint32_t)block[0] << 16) | ((uint32_t)block[1] << 8) | ((uint32_t)block[2]);
+                uint32_t buffer =
+                        (static_cast<uint32_t>(block[0]) << 16) |
+                        (static_cast<uint32_t>(block[1]) << 8 ) |
+                        (static_cast<uint32_t>(block[2])      );
 
-                for (int j = 3; j >= 0/*3 - blockSize*/; j--)
+                for (int j = 3; j >= 0; j--)
                 {
                     result += Base64::base64Alphabet[(buffer >> (6 * j)) % 64];
                 }
@@ -50,7 +48,7 @@ public:
             }
             uint32_t buffer = block[0] << 16 | block[1] << 8 | block[2];
 
-            for (int i = 3; i >= 3 - blockSize; i--)
+            for (int i = 3; i >= 0; i--)
             {
                 result += Base64::base64Alphabet[(buffer >> (6 * i)) % 64];
             }
