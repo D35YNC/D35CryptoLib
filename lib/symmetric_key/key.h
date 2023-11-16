@@ -20,7 +20,7 @@ public:
     {
         if (keyBytes.empty())
         {
-            throw std::invalid_argument("Key shoudlldld be not empty pls");
+            throw D35Crypto::KeyException(__LINE__, __FILE__, "Key is empty");
         }
     }
 
@@ -48,7 +48,7 @@ public:
 
         if (bitSize % 8 != 0)
         {
-            throw std::invalid_argument("Bad key size");
+            throw D35Crypto::BadKeySizeException(__LINE__, __FILE__);
         }
         int bytesSize = static_cast<int>(bitSize / 8);
 

@@ -6,7 +6,7 @@ std::vector<uint8_t> D35Crypto::RSA::encrypt(const std::vector<uint8_t> &data, c
 {
     if (!key.canEncrypt())
     {
-        throw D35Crypto::WrongKeyException("Public key need for encrypt");
+        throw D35Crypto::WrongKeyException(__LINE__, __FILE__, "Public key need for encryption");
     }
 
     std::vector<uint8_t> paddedData(data.begin(), data.end());
@@ -32,12 +32,12 @@ std::vector<uint8_t> D35Crypto::RSA::decrypt(const std::vector<uint8_t> &data, c
 {
     if (!key.canDecrypt())
     {
-        throw D35Crypto::WrongKeyException("Private key need for decrypt");
+        throw D35Crypto::WrongKeyException(__LINE__, __FILE__, "Private key need for decrypt");
     }
 
     if (data.size() % key.size() != 0)
     {
-        throw std::exception();//creat
+        throw D35Crypto::BadKeySizeException(__LINE__, __FILE__/*, "Data not padded"*/); // ?
     }
 
     std::vector<uint8_t> decryptedData;
