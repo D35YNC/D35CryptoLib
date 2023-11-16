@@ -1,175 +1,21 @@
 #include "fiatshamirkey.h"
 
-D35Crypto::FiatShamirKey D35Crypto::FiatShamirKey::generate(size_t bitSize, HashBase *hash)
-{
-    NTL::ZZ p;
-    NTL::ZZ q;
-    NTL::ZZ n;
-    NTL::ZZ tmp = NTL::conv<NTL::ZZ>(0);
-    size_t i_count = hash->digestSize() * 8;
-    std::vector<NTL::ZZ> a(i_count);
-    std::vector<NTL::ZZ> b(i_count);
-
-    if (bitSize % 1024 != 0)
-    {
-        throw std::invalid_argument("Invalid key size");
-    }
-
-    // Generating 512 bytes seed
-    std::vector<unsigned char> seed(512, 0x00);
-    std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX - 1);
-    std::random_device dev_random("/dev/random");
-    for (int i = 0; i < seed.size(); i++)
-    {
-        seed[i] = dist(dev_random);
-    }
-    NTL::SetSeed(seed.data(), seed.size());
-
-    // random pq
-    p = NTL::GenPrime_ZZ(static_cast<long>(bitSize / 2));
-    q = NTL::GenPrime_ZZ(static_cast<long>(bitSize / 2));
-    n = p * q;
-
-    for (int i = 0; i < i_count; i++)
-    {
-        do
-        {
-            tmp = NTL::RandomBnd(n); // random A[i]. GCD(a, n) == 1
-        } while (NTL::GCD(tmp, n) != NTL::conv<NTL::ZZ>(1));
-        a[i] = tmp;
-    }
-
-    for (int i = 0; i < i_count; i++)
-    {
-        tmp = NTL::PowerMod(NTL::InvMod(a[i], n), 2, n); // b[i] = (a[i]^-1) ^ 2 mod n
-        b[i] = tmp;
-    }
-
-    return D35Crypto::FiatShamirKey(p, q, n, a, b, hash);
-}
-
-//D35Crypto::FiatShamirKey D35Crypto::FiatShamirKey::fromPKCS8(PKCS8 *pkcs8obj)
-//{
-//    std::vector<uint8_t> buf = pkcs8obj->getField(0);
-
-//    std::string hashId = std::string(buf.begin(), buf.end());
-
-//    buf = pkcs8obj->getField(1);
-//    NTL::ZZ n = NTL::ZZFromBytes(buf.data(), buf.size());
-
-//    HashBase *hash = nullptr;
-//    if (hashId == "SHA256")
-//    {
-//        hash = new D35Crypto::SHA256();
-//    }
-//    else if (hashId == "SHA512")
-//    {
-//        hash = new D35Crypto::SHA512();
-//    }
-//    else if (hashId == "Streebog256")
-//    {
-//        D35Crypto::Streebog *s = new D35Crypto::Streebog();
-//        s->setMode(512);
-//        hash = s;
-//    }
-//    else if (hashId == "Streebog512")
-//    {
-//        D35Crypto::Streebog *s = new D35Crypto::Streebog();
-//        s->setMode(256);
-//        hash = s;
-//    }
-//    else
-//    {
-//        throw std::runtime_error("iunknown cipher");
-//    }
-//    std::vector<NTL::ZZ> b(hash->digestSize() * 8);
-//    for (int i = 0; i < b.size(); i++)
-//    {
-//        buf = pkcs8obj->getField(i + 2);
-//        b[i] = NTL::ZZFromBytes(buf.data(), buf.size());
-//    }
-//    return D35Crypto::FiatShamirKey(n, b, hash);
-//}
-
-//D35Crypto::FiatShamirKey D35Crypto::FiatShamirKey::fromPKCS12(PKCS12 *pkcs12obj)
-//{
-//    std::vector<uint8_t> buf = pkcs12obj->getField(0);
-
-//    std::string hashId = std::string(buf.begin(), buf.end());
-
-//    buf = pkcs12obj->getField(1);
-//    NTL::ZZ p = NTL::ZZFromBytes(buf.data(), buf.size());
-
-//    buf = pkcs12obj->getField(2);
-//    NTL::ZZ q = NTL::ZZFromBytes(buf.data(), buf.size());
-
-//    HashBase *hash = nullptr;
-//    if (hashId == "SHA256")
-//    {
-//        hash = new D35Crypto::SHA256();
-//    }
-//    else if (hashId == "SHA512")
-//    {
-//        hash = new D35Crypto::SHA512();
-//    }
-//    else if (hashId == "Streebog256")
-//    {
-//        D35Crypto::Streebog *s = new D35Crypto::Streebog();
-//        s->setMode(512);
-//        hash = s;
-//    }
-//    else if (hashId == "Streebog512")
-//    {
-//        D35Crypto::Streebog *s = new D35Crypto::Streebog();
-//        s->setMode(256);
-//        hash = s;
-//    }
-//    else
-//    {
-//        throw std::runtime_error("iunknown cipher");
-//    }
-
-//    std::vector<NTL::ZZ> a(hash->digestSize() * 8);
-//    for (int i = 0; i < a.size(); i++)
-//    {
-//        buf = pkcs12obj->getField(i + 3);
-//        a[i] = NTL::ZZFromBytes(buf.data(), buf.size());
-//    }
-//    return D35Crypto::FiatShamirKey(p, q, a, hash);
-//}
-
-//D35Crypto::FiatShamirKey D35Crypto::FiatShamirKey::fromPKCS8File(const std::string &filename)
-//{
-//    PKCS8 *pkcs = new PKCS8(filename);
-//    FiatShamirKey r = FiatShamirKey::fromPKCS8(pkcs);
-//    delete pkcs;
-//    return r;
-//}
-
-//D35Crypto::FiatShamirKey D35Crypto::FiatShamirKey::fromPKCS12File(const std::string &filename)
-//{
-//    PKCS12 *pkcs = new PKCS12(filename);
-//    FiatShamirKey r = FiatShamirKey::fromPKCS12(pkcs);
-//    delete pkcs;
-//    return r;
-//}
-
-bool D35Crypto::FiatShamirKey::isPrivate() const
+bool D35Crypto::FiatShamirKey::isPrivate() const noexcept
 {
     return !(p == q && p == 0); // ladno
 }
 
-bool D35Crypto::FiatShamirKey::canSign() const
+bool D35Crypto::FiatShamirKey::canSign() const noexcept
 {
     return isPrivate();
 }
 
-bool D35Crypto::FiatShamirKey::canEncrypt() const
+bool D35Crypto::FiatShamirKey::canEncrypt() const noexcept
 {
     return !isPrivate();
 }
 
-bool D35Crypto::FiatShamirKey::canDecrypt() const
+bool D35Crypto::FiatShamirKey::canDecrypt() const noexcept
 {
     return isPrivate();
 }
@@ -184,66 +30,106 @@ size_t D35Crypto::FiatShamirKey::size() const
     return NTL::NumBytes(this->n);
 }
 
-//D35Crypto::PKCS12 D35Crypto::FiatShamirKey::exportPrivateKey() const
-//{
-//    std::map<int, std::vector<uint8_t>> keyMap;
-//    std::vector<uint8_t> buffer;
+std::vector<uint8_t> D35Crypto::FiatShamirKey::exportPrivateKeyBytes() const
+{
+    size_t total_a_size = 0;
+    for (const NTL::ZZ &ai : this->a)
+    {
+        total_a_size += NTL::NumBytes(ai);
+    }
+    std::vector<uint8_t> buffer(8 + 4 + NTL::NumBytes(this->p) + 4 + NTL::NumBytes(this->q) + (4 * this->a.size()) + total_a_size, 0x00);
 
-//    keyMap[0] = std::vector<uint8_t>(this->hashId.begin(), this->hashId.end());
+    buffer[0] = 0x50;
+    buffer[1] = 0x52;
+    buffer[2] = 0x49;
+    buffer[3] = 0x56;
+    buffer[4] = 0x4b;
+    buffer[5] = 0x45;
+    buffer[6] = 0x59;
+    buffer[7] = 0xFF;
 
-//    buffer.resize(NTL::NumBytes(this->p));
-//    NTL::BytesFromZZ(buffer.data(), this->p, NTL::NumBytes(this->p));
-//    keyMap[1] = buffer;
+    size_t pos = 8;
+    size_t itemSize = NTL::NumBytes(this->p);
+    buffer[pos    ] = static_cast<uint8_t>(itemSize >> 24);
+    buffer[pos + 1] = static_cast<uint8_t>(itemSize >> 16);
+    buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
+    buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
+    pos += 4;
+    NTL::BytesFromZZ(buffer.data() + pos, this->p, itemSize);
+    pos += itemSize;
 
-//    buffer.resize(NTL::NumBytes(this->q));
-//    NTL::BytesFromZZ(buffer.data(), this->q, NTL::NumBytes(this->q));
-//    keyMap[2] = buffer;
+    itemSize = NTL::NumBytes(this->q);
+    buffer[pos    ] = static_cast<uint8_t>(itemSize >> 24);
+    buffer[pos + 1] = static_cast<uint8_t>(itemSize >> 16);
+    buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
+    buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
+    pos += 4;
+    NTL::BytesFromZZ(buffer.data() + pos, this->q, itemSize);
+    pos += itemSize;
 
-//    for (int i = 0; i < this->a.size(); i++)
-//    {
-//        buffer.resize(NTL::NumBytes(this->a[i]));
-//        NTL::BytesFromZZ(buffer.data(), this->a[i], NTL::NumBytes(this->a[i]));
-//        keyMap[i + 3] = buffer;
-//    }
+    for (const NTL::ZZ &ai : this->a)
+    {
+        itemSize = NTL::NumBytes(ai);
+        buffer[pos    ] = static_cast<uint8_t>(itemSize >> 24);
+        buffer[pos + 1] = static_cast<uint8_t>(itemSize >> 16);
+        buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
+        buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
+        pos += 4;
+        NTL::BytesFromZZ(buffer.data() + pos, ai, itemSize);
+        pos += itemSize;
+    }
 
-//    return PKCS12("FIATSHAMIR", keyMap);
-//}
+    return buffer;
+}
 
-//D35Crypto::PKCS8 D35Crypto::FiatShamirKey::exportPublicKey() const
-//{
-//    std::map<int, std::vector<uint8_t>> keyMap;
-//    std::vector<uint8_t> buffer;
+std::vector<uint8_t> D35Crypto::FiatShamirKey::exportPublicKeyBytes() const
+{
+    size_t total_b_size = 0;
+    for (const NTL::ZZ &bi : this->b)
+    {
+        total_b_size += NTL::NumBytes(bi);
+    }
+    std::vector<uint8_t> buffer(8 + 4 + NTL::NumBytes(this->n) + (4 * this->b.size()) + total_b_size, 0x00);
 
-//    keyMap[0] = std::vector<uint8_t>(this->hashId.begin(), this->hashId.end());
+    buffer[0] = 0x50;
+    buffer[1] = 0x52;
+    buffer[2] = 0x49;
+    buffer[3] = 0x56;
+    buffer[4] = 0x4b;
+    buffer[5] = 0x45;
+    buffer[6] = 0x59;
+    buffer[7] = 0xFF;
 
-//    buffer.resize(NTL::NumBytes(this->n));
-//    NTL::BytesFromZZ(buffer.data(), this->n, NTL::NumBytes(this->n));
-//    keyMap[1] = buffer;
+    size_t pos = 8;
+    size_t itemSize = NTL::NumBytes(this->n);
+    buffer[pos    ] = static_cast<uint8_t>(itemSize >> 24);
+    buffer[pos + 1] = static_cast<uint8_t>(itemSize >> 16);
+    buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
+    buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
+    pos += 4;
+    NTL::BytesFromZZ(buffer.data() + pos, this->n, itemSize);
+    pos += itemSize;
 
-//    for (int i = 0; i < this->b.size(); i++)
-//    {
-//        buffer.resize(NTL::NumBytes(this->b[i]));
-//        NTL::BytesFromZZ(buffer.data(), this->b[i], NTL::NumBytes(this->b[i]));
-//        keyMap[i + 2] = buffer;
-//    }
-//    return PKCS8("FIATSHAMIR", keyMap);
-//}
+    for (const NTL::ZZ &bi : this->b)
+    {
+        itemSize = NTL::NumBytes(bi);
+        buffer[pos    ] = static_cast<uint8_t>(itemSize >> 24);
+        buffer[pos + 1] = static_cast<uint8_t>(itemSize >> 16);
+        buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
+        buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
+        pos += 4;
+        NTL::BytesFromZZ(buffer.data() + pos, bi, itemSize);
+        pos += itemSize;
+    }
 
-//std::vector<uint8_t> D35Crypto::FiatShamirKey::exportPrivateKeyBytes() const
-//{
-//    return this->exportPrivateKey().toBytes();
-//}
-
-//std::vector<uint8_t> D35Crypto::FiatShamirKey::exportPublicKeyBytes() const
-//{
-//    return this->exportPublicKey().toBytes();
-//}
+    return buffer;
+}
 
 NTL::ZZ D35Crypto::FiatShamirKey::getP() const
 {
     if (!this->isPrivate())
     {
-        throw std::runtime_error("is not privkey");
+        throw D35Crypto::WrongKeyException(__LINE__, __FILE__, "Its not private key");
     }
     return this->p;
 }
@@ -252,7 +138,7 @@ NTL::ZZ D35Crypto::FiatShamirKey::getQ() const
 {
     if (!this->isPrivate())
     {
-        throw std::runtime_error("is not privkey");
+        throw D35Crypto::WrongKeyException(__LINE__, __FILE__, "Its not private key");
     }
     return this->q;
 }
@@ -266,7 +152,7 @@ std::vector<NTL::ZZ> D35Crypto::FiatShamirKey::getA() const
 {
     if (!this->isPrivate())
     {
-        throw std::runtime_error("is not privkey");
+        throw D35Crypto::WrongKeyException(__LINE__, __FILE__, "Its not private key");
     }
     return this->a;
 }
@@ -274,9 +160,4 @@ std::vector<NTL::ZZ> D35Crypto::FiatShamirKey::getA() const
 std::vector<NTL::ZZ> D35Crypto::FiatShamirKey::getB() const
 {
     return this->b;
-}
-
-std::string D35Crypto::FiatShamirKey::getHashId() const
-{
-    return this->hashId;
 }

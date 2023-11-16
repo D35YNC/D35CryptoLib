@@ -8,7 +8,6 @@
 #include <NTL/ZZ.h>
 
 #include "../exceptions.h"
-
 #include "../encoding/base64.h"
 
 namespace D35Crypto
@@ -32,18 +31,18 @@ public:
 
     static ElGamalKey generate(size_t bitSize);
 
-    bool isPrivate() const;
-    bool canSign() const;
-    bool canEncrypt() const;
-    bool canDecrypt() const;
+//    static ElGamalKey publicKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
+//    static ElGamalKey privateKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
+
+    bool isPrivate() const noexcept;
+    bool canSign() const noexcept;
+    bool canEncrypt() const noexcept;
+    bool canDecrypt() const noexcept;
     size_t blockSize() const;
     size_t size() const;
 
-//    std::vector<uint8_t> exportPrivateKey() const;
-//    std::vector<uint8_t> exportPublicKey() const;
-
-//    std::vector<uint8_t> exportPrivateKeyBytes() const;
-//    std::vector<uint8_t> exportPublicKeyBytes() const;
+    std::vector<uint8_t> exportPrivateKeyBytes() const;
+    std::vector<uint8_t> exportPublicKeyBytes() const;
 
     // pubk
     NTL::ZZ getAlpha() const;
