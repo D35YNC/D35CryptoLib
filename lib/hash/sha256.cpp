@@ -43,7 +43,7 @@ void D35Crypto::SHA256::update(std::ifstream &file)
 
     //process first I full blocks
     std::vector<uint8_t> readBuffer(4096);
-    for (int i = 0; i < (int)(fileSize / 4096); i++)
+    for (int i = 0; i < static_cast<int>(fileSize / 4096); i++)
     {
         file.read((char*)readBuffer.data(), readBuffer.size());
         this->_updateState(readBuffer);
@@ -59,9 +59,14 @@ void D35Crypto::SHA256::update(std::ifstream &file)
     this->_finalize();
 }
 
-size_t D35Crypto::SHA256::blockSize()
+size_t D35Crypto::SHA256::blockSize() const noexcept
 {
     return 64;
+}
+
+const std::string D35Crypto::SHA256::name() const noexcept
+{
+    return "SHA256";
 }
 
 void D35Crypto::SHA256::_updateState(const std::vector<uint8_t> &buffer)
@@ -145,24 +150,24 @@ void D35Crypto::SHA256::_pad(std::vector<uint8_t> &buffer, size_t datasize)
 
     // big endian size append
     // from 64 to 8
-    buffer.push_back((uint8_t)(bitSize >> 56));
-    buffer.push_back((uint8_t)(bitSize >> 48));
-    buffer.push_back((uint8_t)(bitSize >> 40));
-    buffer.push_back((uint8_t)(bitSize >> 32));
-    buffer.push_back((uint8_t)(bitSize >> 24));
-    buffer.push_back((uint8_t)(bitSize >> 16));
-    buffer.push_back((uint8_t)(bitSize >> 8));
-    buffer.push_back((uint8_t)(bitSize));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 56));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 48));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 40));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 32));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 24));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 16));
+    buffer.push_back(static_cast<uint8_t>(bitSize >> 8 ));
+    buffer.push_back(static_cast<uint8_t>(bitSize      ));
 }
 
 void D35Crypto::SHA256::_finalize()
 {
     for (int i = 0; i < 8; i++)
     {
-        this->_digest[i * 4] = (uint8_t)(_hashState[i] >> 24);
-        this->_digest[(i * 4) + 1] = (uint8_t)(_hashState[i] >> 16);
-        this->_digest[(i * 4) + 2] = (uint8_t)(_hashState[i] >> 8);
-        this->_digest[(i * 4) + 3] = (uint8_t)(_hashState[i]);
+        this->_digest[i * 4      ] = static_cast<uint8_t>(_hashState[i] >> 24);
+        this->_digest[(i * 4) + 1] = static_cast<uint8_t>(_hashState[i] >> 16);
+        this->_digest[(i * 4) + 2] = static_cast<uint8_t>(_hashState[i] >> 8 );
+        this->_digest[(i * 4) + 3] = static_cast<uint8_t>(_hashState[i]      );
     }
 }
 

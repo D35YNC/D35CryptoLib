@@ -58,9 +58,14 @@ void D35Crypto::SHA512::update(std::ifstream &file)
     this->_finalize();
 }
 
-size_t D35Crypto::SHA512::blockSize()
+size_t D35Crypto::SHA512::blockSize() const noexcept
 {
     return 128;
+}
+
+const std::string D35Crypto::SHA512::name() const noexcept
+{
+    return "SHA512";
 }
 
 void D35Crypto::SHA512::_updateState(const std::vector<uint8_t> &buffer)

@@ -8,11 +8,12 @@ namespace D35Crypto
 class SHA512 : public HashBase
 {
 public:
-    SHA512() : HashBase(64, "SHA512") { };
+    SHA512() : HashBase(64) { };
     void update(const std::string &data) override;
     void update(const std::vector<uint8_t> &data) override;
     void update(std::ifstream &file) override;
-    size_t blockSize() override;
+    size_t blockSize() const noexcept override;
+    const std::string name() const noexcept override;
 private:
     void _init();
     void _updateState(const std::vector<uint8_t>&);

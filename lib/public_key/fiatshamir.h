@@ -19,10 +19,7 @@ public:
     template<class T>
     std::vector<uint8_t> sign(const std::vector<uint8_t> &data, const FiatShamirKey &key)
     {
-        if (!std::is_base_of_v<HashBase, T>)
-        {
-            throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
-        }
+        static_assert(std::is_base_of_v<HashBase, T>, "FiatShamir sign: it is necessary that the hash function class inherits from D35Crypto::HashBase");
 
         NTL::ZZ r = NTL::RandomBnd(key.getN() - 1) + 1; // random r
         NTL::ZZ u = NTL::PowerMod(r, 2, key.getN());    // u = r^2 mod n
@@ -64,10 +61,7 @@ public:
     template<class T>
     bool checkSign(const std::vector<uint8_t> &signature, const std::vector<uint8_t> &data, const FiatShamirKey &key)
     {
-        if (!std::is_base_of_v<HashBase, T>)
-        {
-            throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
-        }
+        static_assert(std::is_base_of_v<HashBase, T>, "FiatShamirKey checkSign: it is necessary that the hash function class inherits from D35Crypto::HashBase");
 
         HashBase* hash = new T();
         hash->update(data);
@@ -101,9 +95,6 @@ public:
 
         return hash->digest() == s;
     }
-
-private:
-    void sign(std::vector<uint8_t> &signature, const std::vector<uint8_t> &data, const NTL::ZZ &n, const std::vector<NTL::ZZ> &a, HashBase *hash);
 };
 
 }

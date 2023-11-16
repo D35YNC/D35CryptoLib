@@ -2,8 +2,8 @@
 
 #include <string>
 #include <vector>
-#include <sstream> // |
-#include <iomanip> // +- for std::string rawString(){...}
+#include <sstream>
+#include <iomanip>
 
 namespace D35Crypto
 {

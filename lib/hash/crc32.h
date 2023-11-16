@@ -12,6 +12,7 @@ class CRC32
 public:
     static uint32_t calculate(const std::vector<uint8_t> &data, uint32_t crc = 0)
     {
+        // xdd
         // https://stackoverflow.com/questions/27939882/fast-crc-algorithm
         crc = ~crc;
 

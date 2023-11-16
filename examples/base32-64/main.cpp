@@ -11,8 +11,8 @@ int main(int argc, char **argv)
     std::cout << "ENTER STRING> ";
     std::getline(std::cin, inputStr);
 
-    std::string b64result = D35Crypto::Base64::encode(inputStr);
-    std::string b32result = D35Crypto::Base32::encode(inputStr);
+    std::string b64result = D35Crypto::Base64::encode(std::vector<uint8_t>(inputStr.begin(), inputStr.end()));
+    std::string b32result = D35Crypto::Base32::encode(std::vector<uint8_t>(inputStr.begin(), inputStr.end()));
 
     std::cout << "Base64(" << inputStr << ") = " << b64result << std::endl;
     std::cout << "Base32(" << inputStr << ") = " << b32result << std::endl;

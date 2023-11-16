@@ -11,7 +11,7 @@ D35Crypto::RSAKey D35Crypto::RSAKey::generate(size_t bitSize)
 
     if (bitSize % 2048 != 0)
     {
-        throw std::invalid_argument("Invalid key size");
+        throw D35Crypto::BadKeySizeException(__LINE__, __FILE__);
     }
 
     // Generating 512 bytes seed
@@ -34,7 +34,7 @@ D35Crypto::RSAKey D35Crypto::RSAKey::generate(size_t bitSize)
     return RSAKey(n, e, p, q, d);
 }
 
-D35Crypto::RSAKey D35Crypto::RSAKey::pubKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders)
+D35Crypto::RSAKey D35Crypto::RSAKey::publicKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders)
 {
     size_t pos = skipHeaders ? 8 : 0;
     uint32_t itemSize = 0;
@@ -59,7 +59,7 @@ D35Crypto::RSAKey D35Crypto::RSAKey::pubKeyFromBytes(const std::vector<uint8_t> 
     return RSAKey(n, e);
 }
 
-D35Crypto::RSAKey D35Crypto::RSAKey::privKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders)
+D35Crypto::RSAKey D35Crypto::RSAKey::privateKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders)
 {
     size_t pos = skipHeaders ? 8 : 0;
     uint32_t itemSize = 0;
@@ -68,13 +68,6 @@ D35Crypto::RSAKey D35Crypto::RSAKey::privKeyFromBytes(const std::vector<uint8_t>
     NTL::ZZ q;
     NTL::ZZ e;
     NTL::ZZ d;
-
-    itemSize = (buffer[pos] << 24) | (buffer[pos + 1] << 16) | (buffer[pos + 2] << 8) | (buffer[pos + 3]);
-    pos += 4;
-    tmp.resize(itemSize);
-    std::copy(buffer.begin() + pos, buffer.begin() + pos + itemSize, tmp.begin());
-    NTL::ZZFromBytes(e, buffer.data(), buffer.size());
-    pos += itemSize;
 
     itemSize = (buffer[pos] << 24) | (buffer[pos + 1] << 16) | (buffer[pos + 2] << 8) | (buffer[pos + 3]);
     pos += 4;
@@ -94,84 +87,25 @@ D35Crypto::RSAKey D35Crypto::RSAKey::privKeyFromBytes(const std::vector<uint8_t>
     pos += 4;
     tmp.resize(itemSize);
     std::copy(buffer.begin() + pos, buffer.begin() + pos + itemSize, tmp.begin());
-    NTL::ZZFromBytes(d, buffer.data(), buffer.size());
+    NTL::ZZFromBytes(e, buffer.data(), buffer.size());
     pos += itemSize;
+
+    itemSize = (buffer[pos] << 24) | (buffer[pos + 1] << 16) | (buffer[pos + 2] << 8) | (buffer[pos + 3]);
+    pos += 4;
+    tmp.resize(itemSize);
+    std::copy(buffer.begin() + pos, buffer.begin() + pos + itemSize, tmp.begin());
+    NTL::ZZFromBytes(d, buffer.data(), buffer.size());
+//    pos += itemSize;
 
     return RSAKey(p, q, e, d);
 }
 
-D35Crypto::RSAKey D35Crypto::RSAKey::pubKeyFromFile(const std::string &filename)
-{
-    std::ifstream keyfile(filename);
-    if (!keyfile.is_open())
-    {
-        throw std::runtime_error("Cant open file: " + filename);
-    }
-
-    keyfile.seekg(0, std::ios::end);
-    size_t size = keyfile.tellg();
-    keyfile.seekg(0, std::ios::beg);
-
-    std::vector<uint8_t> fileBuffer(size, 0x00);
-    keyfile.read(reinterpret_cast<char*>(fileBuffer.data()), size);
-
-    bool flag = true;
-    std::vector<uint8_t> stupid_header = {0x50, 0x55, 0x42, 0x4b, 0x45, 0x59, 0xFF, 0xFF};
-    if (size < stupid_header.size())
-    {
-        throw BadKeyfileStructureException("Smol keyfile");
-    }
-
-    for (int i = 0; i < stupid_header.size(); i++ )
-    {
-        if (stupid_header[i] != fileBuffer[i])
-        {
-            throw BadKeyfileStructureException("Header not pubkeyfile");
-        }
-    }
-
-    return RSAKey::pubKeyFromBytes(fileBuffer, true);
-}
-
-D35Crypto::RSAKey D35Crypto::RSAKey::privKeyFromFile(const std::string &filename)
-{
-    std::ifstream keyfile(filename);
-    if (!keyfile.is_open())
-    {
-        throw std::runtime_error("Cant open file: " + filename);
-    }
-
-    keyfile.seekg(0, std::ios::end);
-    size_t size = keyfile.tellg();
-    keyfile.seekg(0, std::ios::beg);
-
-    std::vector<uint8_t> fileBuffer(size, 0x00);
-    keyfile.read(reinterpret_cast<char*>(fileBuffer.data()), size);
-
-    bool flag = true;
-    std::vector<uint8_t> stupid_header = {0x50, 0x52, 0x49, 0x56, 0x4b, 0x45, 0x59, 0xFF};
-    if (size < stupid_header.size())
-    {
-        throw BadKeyfileStructureException("Smol keyfile");
-    }
-
-    for (int i = 0; i < stupid_header.size(); i++ )
-    {
-        if (stupid_header[i] != fileBuffer[i])
-        {
-            throw BadKeyfileStructureException("Header not privkeyfile");
-        }
-    }
-
-    return RSAKey::privKeyFromBytes(fileBuffer, true);
-}
-
-NTL::ZZ D35Crypto::RSAKey::getModulus() const
+NTL::ZZ D35Crypto::RSAKey::getModulus() const noexcept
 {
     return this->n;
 }
 
-NTL::ZZ D35Crypto::RSAKey::getPublicExponent() const
+NTL::ZZ D35Crypto::RSAKey::getPublicExponent() const noexcept
 {
     return this->e;
 }
@@ -184,21 +118,26 @@ NTL::ZZ D35Crypto::RSAKey::getPrivateExponent() const
     }
     else
     {
-        throw D35Crypto::WrongKeyException("Public key not contains private exponent d");
+        throw D35Crypto::WrongKeyException(__LINE__, __FILE__, "The public key does not contain a private exponent d");
     }
 }
 
-bool D35Crypto::RSAKey::isPrivate() const
+bool D35Crypto::RSAKey::isPrivate() const noexcept
 {
     return (p != 0) && (q != 0) && (d != 0);
 }
 
-bool D35Crypto::RSAKey::canEncrypt() const
+bool D35Crypto::RSAKey::canSign() const noexcept
+{
+    return isPrivate();
+}
+
+bool D35Crypto::RSAKey::canEncrypt() const noexcept
 {
     return (n != 0) && (e != 0);
 }
 
-bool D35Crypto::RSAKey::canDecrypt() const
+bool D35Crypto::RSAKey::canDecrypt() const noexcept
 {
     return isPrivate();
 }
@@ -242,7 +181,7 @@ std::vector<uint8_t> D35Crypto::RSAKey::exportPrivateKeyBytes() const
     buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
     buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
     pos += 4;
-    NTL::BytesFromZZ(buffer.data() + pos, this->p, itemSize);
+    NTL::BytesFromZZ(buffer.data() + pos, this->q, itemSize);
     pos += itemSize;
 
     itemSize = NTL::NumBytes(this->e);
@@ -251,7 +190,7 @@ std::vector<uint8_t> D35Crypto::RSAKey::exportPrivateKeyBytes() const
     buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
     buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
     pos += 4;
-    NTL::BytesFromZZ(buffer.data() + pos, this->p, itemSize);
+    NTL::BytesFromZZ(buffer.data() + pos, this->e, itemSize);
     pos += itemSize;
 
     itemSize = NTL::NumBytes(this->d);
@@ -260,8 +199,8 @@ std::vector<uint8_t> D35Crypto::RSAKey::exportPrivateKeyBytes() const
     buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
     buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
     pos += 4;
-    NTL::BytesFromZZ(buffer.data() + pos, this->p, itemSize);
-    pos += itemSize;
+    NTL::BytesFromZZ(buffer.data() + pos, this->d, itemSize);
+//    pos += itemSize;
 
     return buffer;
 }
@@ -286,7 +225,7 @@ std::vector<uint8_t> D35Crypto::RSAKey::exportPublicKeyBytes() const
     buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
     buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
     pos += 4;
-    NTL::BytesFromZZ(buffer.data() + pos, this->p, itemSize);
+    NTL::BytesFromZZ(buffer.data() + pos, this->e, itemSize);
     pos += itemSize;
 
     itemSize = NTL::NumBytes(this->n);
@@ -295,9 +234,8 @@ std::vector<uint8_t> D35Crypto::RSAKey::exportPublicKeyBytes() const
     buffer[pos + 2] = static_cast<uint8_t>(itemSize >> 8 );
     buffer[pos + 3] = static_cast<uint8_t>(itemSize      );
     pos += 4;
-    NTL::BytesFromZZ(buffer.data() + pos, this->p, itemSize);
-    pos += itemSize;
+    NTL::BytesFromZZ(buffer.data() + pos, this->n, itemSize);
+//    pos += itemSize;
 
     return buffer;
 }
-

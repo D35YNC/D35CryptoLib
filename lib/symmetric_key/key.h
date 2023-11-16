@@ -114,7 +114,7 @@ public:
 
     uint8_t operator[](size_t index)
     {
-        if (index < this->bytes.size())
+        if (0 <= index && index < this->bytes.size())
         {
             return bytes[index];
         }

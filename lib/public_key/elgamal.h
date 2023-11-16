@@ -19,14 +19,13 @@ public:
     template<class T>
     std::vector<uint8_t> sign(const std::vector<uint8_t> &data, const ElGamalKey &key)
     {
-        if (!std::is_base_of_v<HashBase, T>)
-        {
-            throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
-        }
+        static_assert (std::is_base_of_v<HashBase, T>, "it is necessary that the hash function class inherits from D35Crypto::HashBase");
+
         HashBase* hash = new T();
 
         hash->update(data);
         std::vector<uint8_t> signature = hash->digest();
+
         delete hash;
 
         NTL::ZZ signatureInt = NTL::ZZFromBytes(signature.data(), signature.size());
@@ -55,10 +54,7 @@ public:
     template<class T>
     bool checkSign(const std::vector<uint8_t> &signature, const std::vector<uint8_t> &data, const ElGamalKey &key)
     {
-        if (!std::is_base_of_v<HashBase, T>)
-        {
-            throw std::logic_error("it is necessary that the hash function class inherits from D35Crypto::HashBase");
-        }
+        static_assert (std::is_base_of_v<HashBase, T>, "it is necessary that the hash function class inherits from D35Crypto::HashBase");
 
         HashBase* hash = new T();
         hash->update(data);

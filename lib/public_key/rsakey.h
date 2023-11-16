@@ -25,12 +25,12 @@ public:
         n(_n), e(_e),
         p(_p), q(_q), d(_d)
     { }
-    // For custom pub key
+    // Custom pub key
     RSAKey(NTL::ZZ _n, NTL::ZZ _e) :
         n(_n), e(_e),
         d(NTL::conv<NTL::ZZ>(0)), p(NTL::conv<NTL::ZZ>(0)), q(NTL::conv<NTL::ZZ>(0))
     { }
-    // For custom priv key + extract pubkey
+    // Custom priv key + extract pubkey
     RSAKey(NTL::ZZ _p, NTL::ZZ _q, NTL::ZZ _e, NTL::ZZ _d) :
         n(_p * _q), e(_e),
         d(_d), p(_p), q(_q)
@@ -38,24 +38,21 @@ public:
 
     static RSAKey generate(size_t bitSize);
 
-    /*TODO: ASN1 Encoding*/
-    static RSAKey pubKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
-    static RSAKey privKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
-    static RSAKey pubKeyFromFile(const std::string &filename);
-    static RSAKey privKeyFromFile(const std::string &filename);
+    static RSAKey publicKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
+    static RSAKey privateKeyFromBytes(const std::vector<uint8_t> &buffer, bool skipHeaders = false);
 
-    bool isPrivate() const;
-    bool canSign() const;
-    bool canEncrypt() const;
-    bool canDecrypt() const;
+    bool isPrivate() const noexcept;
+    bool canSign() const noexcept;
+    bool canEncrypt() const noexcept;
+    bool canDecrypt() const noexcept;
     size_t blockSize() const;
     size_t size() const;
 
     std::vector<uint8_t> exportPrivateKeyBytes() const;
     std::vector<uint8_t> exportPublicKeyBytes() const;
 
-    NTL::ZZ getModulus() const;
-    NTL::ZZ getPublicExponent() const;
+    NTL::ZZ getModulus() const noexcept;
+    NTL::ZZ getPublicExponent() const noexcept;
     NTL::ZZ getPrivateExponent() const;
 
 private:

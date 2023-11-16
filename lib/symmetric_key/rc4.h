@@ -14,14 +14,19 @@ namespace D35Crypto
 class RC4 : public SymmetricCipherBase
 {
 public:
-    RC4(const D35Crypto::Key &key, uint64_t pos = 0) : SymmetricCipherBase("RC4", key), pos(pos)
+    RC4(const D35Crypto::Key &key, uint64_t pos = 0) : SymmetricCipherBase(key, CipherMode::NONE), pos(pos)
     {
         int j = 0;
         for (int i = 0; i < 256; i++)
         {
-            j = (j + s[i] + this->key[ i % this->key.size() ]) % 256;
+            j = (j + s[i] + this->__key[ i % this->__key.size() ]) % 256;
             std::iter_swap(s.begin() + i, s.begin() + j);
         }
+    }
+
+    void encrypt(std::ifstream &infile, std::ofstream &outfile) override
+    {
+        return;
     }
 
     std::vector<uint8_t> encrypt(const std::vector<uint8_t> &buffer) override
@@ -54,9 +59,14 @@ public:
         return this->encrypt(buffer);
     }
 
-    size_t blockSize() override
+    size_t blockSize() const noexcept override
     {
         return 0; // xdd
+    }
+
+    const std::string name() const noexcept override
+    {
+        return "RC4";
     }
 
 private:

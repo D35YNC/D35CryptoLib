@@ -14,21 +14,16 @@ namespace D35Crypto
 class HashBase
 {
 public:
-    HashBase(int digestSize, const std::string &name) :
-        _digest(digestSize, 0x00),
-        _name(name)
+    HashBase(int digestSize) :
+        _digest(digestSize, 0x00)
     { }
     virtual ~HashBase() = default;
     virtual void update(const std::string &data) = 0;
     virtual void update(const std::vector<uint8_t> &data) = 0;
-    virtual void update(std::ifstream& file) = 0;
+    virtual void update(std::ifstream &file) = 0;
 
-    virtual size_t blockSize() = 0;
-
-    std::string name() const
-    {
-        return this->_name;
-    }
+    virtual size_t blockSize() const noexcept = 0;
+    virtual const std::string name() const noexcept = 0;
 
     std::vector<uint8_t> digest() const
     {
@@ -47,16 +42,7 @@ public:
 
 protected:
     std::vector<uint8_t> _digest;
-    std::string _name;
 
-    void _setNewDigestSize(int newSize)
-    {
-        newSize = (int)(newSize / 8);
-        if (newSize > 0)
-        {
-            this->_digest.resize(newSize);
-        }
-    }
 };
 }
 

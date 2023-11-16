@@ -57,9 +57,14 @@ void D35Crypto::Streebog::update(std::ifstream &file)
     this->_finalize(readBuffer);
 }
 
-size_t D35Crypto::Streebog::blockSize()
+size_t D35Crypto::Streebog::blockSize() const noexcept
 {
     return 64;
+}
+
+const std::string D35Crypto::Streebog::name() const noexcept
+{
+    return "Streebog" + std::to_string(this->_digest.size() * 8);
 }
 
 void D35Crypto::Streebog::_updateState(std::vector<uint8_t> &buffer)
@@ -120,16 +125,6 @@ void D35Crypto::Streebog::_finalize(std::vector<uint8_t> &buffer)
     {
         this->_digest = h;
     }
-}
-
-void D35Crypto::Streebog::setMode(int __digestSize)
-{
-    if (!(__digestSize == 256 | __digestSize == 512))
-    {
-        throw "Incorrect digest size. Must be 256 or 512";
-    }
-    this->_setNewDigestSize(__digestSize);
-    this->_name = "Streebog" + std::to_string(__digestSize);
 }
 
 std::vector<uint8_t> D35Crypto::Streebog::_add512(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b)

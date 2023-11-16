@@ -10,16 +10,26 @@ namespace D35Crypto
 class Streebog : public HashBase
 {
 public:
-    Streebog() : HashBase(64, "Streebog512"),
-        h(64),
-        N(64),
-        Sigma(64)
-    {};
-    void setMode(int);
+    enum Mode : int
+    {
+        MODE256 = 32,
+        MODE512 = 64
+    };
+
+    Streebog(Mode mode = Streebog::MODE512)
+        :
+          HashBase(mode),
+          h(64),
+          N(64),
+          Sigma(64)
+    { };
+
     void update(const std::string &data) override;
     void update(const std::vector<uint8_t> &data) override;
     void update(std::ifstream &file) override;
-    size_t blockSize() override;
+    size_t blockSize() const noexcept override;
+    const std::string name() const noexcept override;
+
 private:
     std::vector<uint8_t> h;
     std::vector<uint8_t> N;

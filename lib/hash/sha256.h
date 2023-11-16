@@ -5,15 +5,15 @@
 
 namespace D35Crypto
 {
-class SHA256: public HashBase
+class SHA256 : public HashBase
 {
 public:
-    SHA256() : HashBase(32, "SHA256") { };
-    void update(const std::string&) override;
-    void update(const std::vector<uint8_t>&) override;
-    void update(std::ifstream& file) override;
-    size_t blockSize() override;
-
+    SHA256() : HashBase(32) { };
+    void update(const std::string &data) override;
+    void update(const std::vector<uint8_t> &data) override;
+    void update(std::ifstream &file) override;
+    size_t blockSize() const noexcept override;
+    const std::string name() const noexcept override;
 private:
     void _init();
     void _updateState(const std::vector<uint8_t>&);
