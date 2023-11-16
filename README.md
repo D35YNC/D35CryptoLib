@@ -1,4 +1,6 @@
-# Cpp cryptolib Ver0.08[ALPHA]
+# yet another one Cpp cryptolib
+
+:warning: ALERT: THIS IS AN EDUCATIONAL PROJECT, U SHOULD BE CAREFUL WHEN USING IT IN REAL PROJECTS.
 
 ### FEATURES
  - Encodings:
